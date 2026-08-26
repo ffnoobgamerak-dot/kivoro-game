@@ -135,15 +135,6 @@ function stopAllSpecialTimers() {
   }
 }
 
-function hasUserDeposited100(userId) {
-  try {
-    const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]')
-    return deposits.some(d => String(d.uid) === String(userId) && d.status === 'Completed' && Number(d.amount) >= 100)
-  } catch {
-    return false
-  }
-}
-
 /* =========================
    NAVIGATION
 ========================= */
@@ -325,20 +316,19 @@ function showHome() {
         <span>🎮</span>
       </section>
 
-      <h2 class="section-title">Wingo (Locked until ₹100 Deposit)</h2>
+      <h2 class="section-title">Wingo Games</h2>
 
       <section class="game-grid">
         ${modes
           .map(mode => {
             const enabled = admin.games?.[mode.key] !== false
             const locked = admin.lockedGames?.[mode.key] === true
-            const hasDeposited = hasUserDeposited100(user.id)
 
             return `
               <button class="game-card" data-mode="${mode.seconds}" data-key="${mode.key}">
                 <span>⏱️</span>
                 <strong>${mode.name}</strong>
-                <small>${!enabled ? 'Disabled' : locked ? 'Locked' : !hasDeposited ? '🔒 Dep. ₹100 to Unlock' : 'Play Now'}</small>
+                <small>${!enabled ? 'Disabled' : locked ? 'Locked' : 'Play Now'}</small>
               </button>
             `
           })
@@ -365,12 +355,6 @@ function showHome() {
     button.onclick = () => {
       const modeSec = Number(button.dataset.mode)
       const modeKey = button.dataset.key
-      
-      if (!hasUserDeposited100(user.id)) {
-        showToast('Wingo khelne ke liye pehle minimum ₹100 deposit karein!', 'error')
-        showWallet()
-        return
-      }
 
       const state = getAdminState()
       if (state.lockedGames?.[modeKey]) {
@@ -405,7 +389,7 @@ function showHome() {
 }
 
 /* =========================
-   MINI GAMES (Controlled 1x/2x Win Ratio)
+   MINI GAMES
 ========================= */
 
 function showMiniGame(name) {
@@ -430,7 +414,7 @@ function showMiniGame(name) {
         <div id="miniDisplay" style="min-height:140px; display:grid; place-items:center; font-size:65px; margin-bottom:15px;">🎮</div>
         
         <h3>Select Amount</h3>
-        <div class="amount-buttons" style="margin-bottom:10px;">
+        <div class="amount-buttons" style="margin-bottom:10px; display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
           <button class="amount-choice m-amt" data-amount="10">10</button>
           <button class="amount-choice m-amt" data-amount="50">50</button>
           <button class="amount-choice m-amt selected" data-amount="100">100</button>
@@ -471,21 +455,20 @@ function showMiniGame(name) {
     result.textContent = 'Wait for results...'
 
     setTimeout(() => {
-      // Strict House Edge: Only 25% win chance, max 1x-2x payout to prevent loss
-      let isWin = Math.random() < 0.25
+      let isWin = Math.random() < 0.35
       let outcome = ''
       let winCoins = 0
 
       if (name === 'Dice') {
         const val = Math.floor(Math.random() * 6) + 1
         display.textContent = `🎲 ${val}`
-        isWin = isWin && (val === 6) // Rare win
+        isWin = isWin && val >= 4
         winCoins = isWin ? miniBetAmt * 2 : 0
         outcome = `Rolled ${val}`
       } else if (name === 'Number Game') {
         const val = Math.floor(Math.random() * 10)
         display.textContent = `🔢 ${val}`
-        isWin = isWin && (val === 0)
+        isWin = isWin && val % 2 === 0
         winCoins = isWin ? miniBetAmt * 2 : 0
         outcome = `Number ${val}`
       } else if (name === 'Coin Flip') {
@@ -495,10 +478,10 @@ function showMiniGame(name) {
         winCoins = isWin ? miniBetAmt * 2 : 0
         outcome = `Result ${val}`
       } else {
-        const vals = [1, 1, 1, 2, 5]
+        const vals = [1, 2, 5, 10]
         const val = vals[Math.floor(Math.random() * vals.length)]
         display.textContent = `🎡 ${val}x`
-        isWin = val > 1
+        isWin = isWin && val >= 2
         winCoins = isWin ? miniBetAmt * val : 0
         outcome = `Multiplier ${val}x`
       }
@@ -507,7 +490,7 @@ function showMiniGame(name) {
       if (isWin && winCoins > 0) {
         setBalance(getBalance() + winCoins)
         document.querySelector('#miniBalanceDisplay').textContent = `${getBalance().toLocaleString()} 🪙`
-        result.innerHTML = `<span style="color:#10b981;">WIN! +${winCoins} Coins (${outcome})</span>`
+        result.innerHTML = `<span style="color:#22c55e;">WIN! +${winCoins} Coins (${outcome})</span>`
         showToast(`Congratulations! You won ${winCoins} coins`, 'success')
         saveUserBetRecord(user.id, { game: name, bet: miniBetAmt, result: 'WIN', payout: winCoins, date: new Date().toLocaleString() })
       } else {
@@ -520,7 +503,7 @@ function showMiniGame(name) {
 }
 
 /* =========================
-   WINGO (Controlled Winning Ratio)
+   WINGO
 ========================= */
 
 function showWingo() {
@@ -552,7 +535,7 @@ function showWingo() {
       </section>
 
       <section class="normal-card">
-        <div id="wingoStatus" style="text-align:center; padding:15px; border-radius:14px; background:#0f172a; margin-bottom:20px; border:1px solid #334155;">
+        <div id="wingoStatus" style="text-align:center; padding:15px; border-radius:14px; background:#16263b; margin-bottom:20px;">
           Round running
         </div>
 
@@ -577,7 +560,7 @@ function showWingo() {
         </section>
 
         <h3>Select Amount</h3>
-        <div class="amount-buttons">
+        <div class="amount-buttons" style="display:flex; gap:6px; flex-wrap:wrap;">
           <button class="amount-choice selected" data-amount="10">10</button>
           <button class="amount-choice" data-amount="50">50</button>
           <button class="amount-choice" data-amount="100">100</button>
@@ -585,13 +568,13 @@ function showWingo() {
           <button class="amount-choice" data-amount="1000">1000</button>
         </div>
 
-        <div class="custom-amount">
-          <button id="amountMinus">−</button>
-          <input id="gameAmount" type="number" min="10" step="10" value="10">
-          <button id="amountPlus">+</button>
+        <div class="custom-amount" style="margin-top:10px; display:flex; gap:8px;">
+          <button id="amountMinus" style="padding:8px 14px; background:#334155; border:none; color:#fff; border-radius:6px;">−</button>
+          <input id="gameAmount" type="number" min="10" step="10" value="10" style="flex:1; padding:8px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; text-align:center;">
+          <button id="amountPlus" style="padding:8px 14px; background:#334155; border:none; color:#fff; border-radius:6px;">+</button>
         </div>
 
-        <p id="amountStatus" style="text-align:center; font-weight:700;">Selected Amount: 10</p>
+        <p id="amountStatus" style="text-align:center; font-weight:700; margin-top:8px;">Selected Amount: 10</p>
 
         <div class="bet-summary">
           <span>Selected</span>
@@ -803,7 +786,6 @@ function finishRound() {
       number = Math.floor(Math.random() * 10)
     }
   } else {
-    // Controlled House Edge: Generate result such that user usually loses or gets 1x/2x
     number = Math.floor(Math.random() * 10)
   }
 
@@ -813,20 +795,15 @@ function finishRound() {
   const user = getCurrentUser()
 
   if (lockedPrediction) {
-    // Force lower win probability unless admin overrides
-    const isForcedWin = forced !== null && forced !== undefined && forced !== ''
-    const randomWinChance = Math.random() < 0.30 // 30% natural win rate
-    matched = isForcedWin ? checkMatch(lockedPrediction.choice, number, result) : (randomWinChance && checkMatch(lockedPrediction.choice, number, result))
+    matched = checkMatch(lockedPrediction.choice, number, result)
 
     if (matched) {
-      let multiplier = 2 // Capped at 2x max to protect admin funds
+      let multiplier = 2
       if (!isNaN(lockedPrediction.choice) && String(lockedPrediction.choice).trim() !== '') {
-        multiplier = 2 // Reduced number win multiplier to 2x for safety
+        multiplier = 9
       }
       winAmount = lockedPrediction.amount * multiplier
       setBalance(getBalance() + winAmount)
-    } else {
-      matched = false
     }
 
     if (user) {
@@ -936,13 +913,13 @@ function renderHistory() {
   if (userBets.length > 0) {
     html += `<h4 style="margin:10px 0 5px 0; color:#38bdf8;">Your Recent Bets</h4>`
     html += userBets.slice(0, 5).map(b => `
-      <div style="background:#0f172a; padding:8px 12px; margin-bottom:6px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; font-size:12px; border:1px solid #334155;">
+      <div style="background:#111; padding:8px 12px; margin-bottom:6px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
         <div>
           <strong>${b.game}</strong> (#${b.period || '—'})<br>
           <span style="color:#aaa;">Choice: ${b.choice || '—'} | Bet: ${b.bet} Coins</span>
         </div>
         <div style="text-align:right;">
-          <strong style="color:${b.result === 'WIN' ? '#10b981' : '#ef4444'};">${b.result}</strong><br>
+          <strong style="color:${b.result === 'WIN' ? '#22c55e' : '#ef4444'};">${b.result}</strong><br>
           <small style="color:#888;">${b.payout ? '+' + b.payout : '0'} Coins</small>
         </div>
       </div>
@@ -959,7 +936,7 @@ function renderHistory() {
         <strong>${round.number}</strong>
         <span>${round.color}</span>
         <span>${round.size}</span>
-        <span style="font-weight:bold; color:${round.matched === true ? '#10b981' : round.matched === false ? '#ef4444' : '#aaa'};">${
+        <span style="font-weight:bold; color:${round.matched === true ? '#22c55e' : round.matched === false ? '#ef4444' : '#aaa'};">${
           round.matched === null || round.matched === undefined
             ? '—'
             : round.matched
@@ -983,12 +960,12 @@ function showResultPopup(won, result, payout) {
     background: rgba(0,0,0,0.8); display: grid; place-items:center; z-index:99999;
   `
   popup.innerHTML = `
-    <div class="result-popup-card" style="background:#1e293b; padding:30px; border-radius:16px; text-align:center; width:90%; max-width:320px; color:#fff; box-shadow:0 15px 35px rgba(0,0,0,0.6); border:1px solid #334155;">
+    <div class="result-popup-card" style="background:#1e293b; padding:30px; border-radius:16px; text-align:center; width:90%; max-width:320px; color:#fff; box-shadow:0 15px 35px rgba(0,0,0,0.6);">
       <div style="font-size:65px; margin-bottom:10px;">${won ? '🏆' : '🎯'}</div>
-      <h2 style="color:${won ? '#10b981' : '#ef4444'}; font-size:24px; margin-bottom:10px;">${won ? 'WIN' : 'LOSS'}</h2>
+      <h2 style="color:${won ? '#22c55e' : '#ef4444'}; font-size:24px; margin-bottom:10px;">${won ? 'WIN' : 'LOSS'}</h2>
       <div style="font-size:38px; font-weight:900; margin:10px 0; background:#0f172a; padding:10px; border-radius:10px;">${result.number}</div>
       <p style="color:#94a3b8; margin-bottom:15px;">${result.color} • ${result.size}</p>
-      ${won ? `<p style="color:#10b981; font-weight:bold; font-size:16px; margin-bottom:15px;">Won: +${payout} Coins</p>` : ''}
+      ${won ? `<p style="color:#22c55e; font-weight:bold; font-size:16px; margin-bottom:15px;">Won: +${payout} Coins</p>` : ''}
       <button id="closeResultPopup" class="main-btn" style="width:100%;">Continue</button>
     </div>
   `
@@ -1061,8 +1038,8 @@ function showAviator() {
         <p id="aviatorStatus" style="font-weight:bold; color:#aaa; margin-bottom:15px;">Next round starting...</p>
 
         <div id="aviatorControls">
-          <input id="avBetInput" type="number" value="100" min="10" placeholder="Bet Amount" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155; text-align:center;">
-          <button id="avBetBtn" class="main-btn" style="background:#10b981;">Place Bet</button>
+          <input id="avBetInput" type="number" value="100" min="10" placeholder="Bet Amount" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; background:#111; color:#fff; border:1px solid #333; text-align:center;">
+          <button id="avBetBtn" class="main-btn" style="background:#2563eb;">Place Bet</button>
         </div>
       </section>
 
@@ -1100,7 +1077,7 @@ function showAviator() {
       isPlaying = true
       cashedOut = false
       document.querySelector('#avBalance').textContent = getBalance().toLocaleString()
-      betBtn.style.background = '#10b981'
+      betBtn.style.background = '#22c55e'
       betBtn.textContent = 'Cash Out'
       showToast(`Aviator Bet of ${amt} coins placed!`, 'success')
     } else if (isPlaying && !cashedOut) {
@@ -1125,7 +1102,7 @@ function startAviatorRoundLive() {
   if (currentPage !== 'aviator') return
 
   let multiplier = 1
-  const stopAt = Number((1.01 + Math.random() * 0.8).toFixed(2)) // Low multipliers (1.01x to 1.8x) to protect house
+  const stopAt = Number((1.05 + Math.random() * 5).toFixed(2))
   const status = document.querySelector('#aviatorStatus')
   const display = document.querySelector('#aviatorMultiplier')
 
@@ -1137,7 +1114,7 @@ function startAviatorRoundLive() {
       return
     }
 
-    multiplier += 0.03 + multiplier * 0.01
+    multiplier += 0.04 + multiplier * 0.015
     currentMultiplier = multiplier
 
     if (display) {
@@ -1169,7 +1146,7 @@ function startAviatorRoundLive() {
         if (currentPage === 'aviator') {
           if (display) display.textContent = '1.00x'
           if (betBtnEl) {
-            betBtnEl.style.background = '#10b981'
+            betBtnEl.style.background = '#2563eb'
             betBtnEl.disabled = false
             betBtnEl.textContent = 'Place Bet'
           }
@@ -1239,7 +1216,7 @@ function showPromotion() {
 
   app().innerHTML = `
     <div class="app-shell">
-      <h1>Promotion Center</h1>
+      <h1>Promotion Center (Agency)</h1>
 
       <section class="wallet-card" style="background: linear-gradient(135deg, #10b981, #047857);">
         <span>Total Commission Earned</span>
@@ -1254,17 +1231,35 @@ function showPromotion() {
         <h2>Invite Friends & Earn</h2>
         <p style="font-size:13px; color:#aaa; margin-bottom:10px;">Apna referral link share karein aur dosto ki deposit ka commission paye:</p>
         
-        <div style="background:#0f172a; padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border:1px solid #334155;">
+        <div style="background:#0f172a; padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <span style="font-size:12px; color:#38bdf8; word-break:break-all; margin-right:10px;">${referralLink}</span>
           <button id="copyLinkBtn" class="main-btn" style="padding:6px 12px; font-size:12px; white-space:nowrap;">Copy Link</button>
         </div>
 
         <div style="display:flex; gap:10px;">
-          <div style="flex:1; background:#0f172a; padding:10px; border-radius:8px; text-align:center; border:1px solid #334155;">
+          <div style="flex:1; background:#0f172a; padding:10px; border-radius:8px; text-align:center;">
             <small style="color:#aaa;">Code</small><br>
             <strong style="color:#10b981;">${escapeHtml(user.referralCode)}</strong>
           </div>
           <button id="copyCodeBtn" class="main-btn" style="flex:1; padding:8px; font-size:13px;">Copy Code</button>
+        </div>
+      </section>
+
+      <section class="normal-card">
+        <h2>Subordinate Data (Team Records)</h2>
+        <div style="background:#0f172a; padding:12px; border-radius:8px; font-size:13px;">
+          <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;">
+            <span>Deposit number:</span> <strong>${refDetails.totalDepositCount || 0}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;">
+            <span>Deposit amount:</span> <strong>₹${refDetails.totalDeposit || 0}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #334155;">
+            <span>Number of bettors:</span> <strong>${refDetails.totalBettors || 0}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 0;">
+            <span>Total bet:</span> <strong>₹${refDetails.totalBetAmount || 0}</strong>
+          </div>
         </div>
       </section>
 
@@ -1347,40 +1342,11 @@ function showWallet() {
     const actionArea = document.querySelector('#walletActionArea')
     actionArea.innerHTML = `
       <h3>Deposit Funds (10% Extra Bonus)</h3>
-      <p style="font-size:12px; color:#aaa; margin-bottom:8px;">Select payment channel & pay using external UPI app, then submit UTR:</p>
-      
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-        <button class="dep-panel-btn main-btn" data-channel="Paytm" style="background:#10b981; font-size:12px; padding:8px;">Paytm Gateway</button>
-        <button class="dep-panel-btn main-btn" data-channel="PhonePe" style="background:#334155; font-size:12px; padding:8px;">PhonePe Pay</button>
-        <button class="dep-panel-btn main-btn" data-channel="GooglePay" style="background:#334155; font-size:12px; padding:8px;">Google Pay</button>
-        <button class="dep-panel-btn main-btn" data-channel="QRDirect" style="background:#334155; font-size:12px; padding:8px;">Direct QR Scan</button>
-        <button class="dep-panel-btn main-btn" data-channel="FastUPI" style="background:#334155; font-size:12px; padding:8px;">Fast UPI Transfer</button>
-        <button class="dep-panel-btn main-btn" data-channel="UPICollect" style="background:#334155; font-size:12px; padding:8px;">UPI Collect Request</button>
-      </div>
-
-      <div style="background:#0f172a; padding:12px; border-radius:8px; text-align:center; margin-bottom:12px; border:1px solid #334155;">
-        <p style="font-size:13px; color:#38bdf8; margin-bottom:6px;">Official UPI: <strong>[Securely Masked & Protected]</strong></p>
-        <div style="background:#fff; display:inline-block; padding:8px; border-radius:6px; margin-bottom:8px;">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=upi://pay?pa=ayush122312@ybl&pn=KivoroPlay" alt="QR">
-        </div>
-        <div>
-          <a id="externalAppPayBtn" href="upi://pay?pa=ayush122312@ybl&pn=KivoroPlay" target="_blank" class="main-btn" style="display:inline-block; background:#10b981; padding:8px 16px; font-size:13px; text-decoration:none; color:#fff;">Pay via External UPI App (PhonePe/GPay)</a>
-        </div>
-      </div>
-
+      <p style="font-size:12px; color:#aaa; margin-bottom:8px;">Enter amount & UTR number after payment:</p>
       <input id="depositAmountInput" type="number" placeholder="Enter Amount (Min 100)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
       <input id="depositUtrInput" type="text" placeholder="Enter 12-digit UTR / Ref Number" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
-      
       <button id="submitDepositReqBtn" class="main-btn">Submit Deposit for Approval</button>
     `
-
-    document.querySelectorAll('.dep-panel-btn').forEach(btn => {
-      btn.onclick = (e) => {
-        document.querySelectorAll('.dep-panel-btn').forEach(b => b.style.background = '#334155')
-        e.target.style.background = '#10b981'
-        showToast(`Channel selected: ${e.target.dataset.channel}`, 'info')
-      }
-    })
 
     document.querySelector('#submitDepositReqBtn').onclick = () => {
       const amt = Number(document.querySelector('#depositAmountInput').value)
@@ -1420,7 +1386,7 @@ function showWallet() {
       <p style="font-size:12px; color:#aaa; margin-bottom:10px;">Enter your UPI ID to withdraw funds securely.</p>
       
       <input id="withdrawalUpiInput" type="text" placeholder="Enter UPI ID (e.g. user@paytm)" value="${escapeHtml(upiStatus.upiId)}" ${upiStatus.locked ? 'readonly style="background:#1e293b; color:#888; width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155;"' : 'style="background:#0f172a; color:#fff; width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155;"'}>
-      ${upiStatus.locked ? '<small style="color:#10b981; display:block; margin-bottom:10px;">🔒 UPI is locked securely (Cannot be changed)</small>' : ''}
+      ${upiStatus.locked ? '<small style="color:#22c55e; display:block; margin-bottom:10px;">🔒 UPI is locked securely (Cannot be changed)</small>' : ''}
       
       <input id="withdrawalAmountInput" type="number" placeholder="Enter amount to withdraw (Min 110)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
       <button id="submitWithdrawalBtn" class="main-btn">Withdraw</button>
@@ -1470,7 +1436,7 @@ function showWallet() {
     actionArea.innerHTML = `
       <h3>Transaction Records</h3>
       <div style="display:flex; gap:10px; margin-bottom:10px;">
-        <button id="histWdBtn" class="main-btn" style="flex:1; background:#10b981; font-size:12px;">Withdrawals (${withdrawals.length})</button>
+        <button id="histWdBtn" class="main-btn" style="flex:1; background:#22c55e; font-size:12px;">Withdrawals (${withdrawals.length})</button>
         <button id="histDepBtn" class="main-btn" style="flex:1; background:#334155; font-size:12px;">Deposits (${deposits.length})</button>
       </div>
       <div id="historyListContainer" style="max-height:220px; overflow-y:auto; text-align:left; font-size:12px;"></div>
@@ -1509,13 +1475,13 @@ function showWallet() {
     renderWd()
 
     document.querySelector('#histWdBtn').onclick = (e) => {
-      e.target.style.background = '#10b981'
+      e.target.style.background = '#22c55e'
       document.querySelector('#histDepBtn').style.background = '#334155'
       renderWd()
     }
 
     document.querySelector('#histDepBtn').onclick = (e) => {
-      e.target.style.background = '#10b981'
+      e.target.style.background = '#22c55e'
       document.querySelector('#histWdBtn').style.background = '#334155'
       renderDep()
     }
@@ -1747,7 +1713,7 @@ function adminWinLossControl() {
           ${[0,1,2,3,4,5,6,7,8,9].map(n => `<option value="${n}" ${String(state.modeForcedResults?.wingo30) === String(n) ? 'selected' : ''}>Number ${n}</option>`).join('')}
         </select>
       </div>
-      <button id="saveAllModesBtn" class="main-btn" style="background:#10b981;">Save Wingo Controls</button>
+      <button id="saveAllModesBtn" class="main-btn" style="background:#22c55e;">Save Wingo Controls</button>
     </section>
   `
 
