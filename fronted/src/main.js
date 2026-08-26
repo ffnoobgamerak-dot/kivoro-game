@@ -37,7 +37,6 @@ import {
   getUserBetRecords
 } from './extras.js'
 
-
 /* =========================
    GLOBAL STATE
 ========================= */
@@ -74,7 +73,6 @@ try {
 } catch {
   history = []
 }
-
 
 /* =========================
    BASIC HELPERS
@@ -137,7 +135,6 @@ function stopAllSpecialTimers() {
   }
 }
 
-
 /* =========================
    NAVIGATION
 ========================= */
@@ -169,7 +166,6 @@ function connectNavigation() {
     if (acc) acc.onclick = showAccount
   }, 50)
 }
-
 
 /* =========================
    LOGIN
@@ -218,7 +214,6 @@ function showLogin() {
   document.querySelector('#goRegister').onclick = showRegister
 }
 
-
 /* =========================
    REGISTER
 ========================= */
@@ -266,7 +261,6 @@ function showRegister() {
 
   document.querySelector('#goLogin').onclick = showLogin
 }
-
 
 /* =========================
    HOME
@@ -389,7 +383,6 @@ function showHome() {
   connectNavigation()
 }
 
-
 /* =========================
    MINI GAMES
 ========================= */
@@ -503,7 +496,6 @@ function showMiniGame(name) {
     }, 800)
   }
 }
-
 
 /* =========================
    WINGO
@@ -685,7 +677,6 @@ function showWingo() {
   }, 1000)
 }
 
-
 function lockPrediction() {
   if (timeLeft <= 5) {
     showToast('Round Locked!', 'error')
@@ -731,7 +722,6 @@ function lockPrediction() {
   updatePredictionButton()
 }
 
-
 function getResult(number) {
   let color = 'RED'
   if (number === 0 || number === 5) {
@@ -746,7 +736,6 @@ function getResult(number) {
   }
 }
 
-
 function checkMatch(choice, number, result) {
   if (String(choice) === String(number)) {
     return true
@@ -759,7 +748,6 @@ function checkMatch(choice, number, result) {
   }
   return false
 }
-
 
 function finishRound() {
   const adminState = getAdminState()
@@ -876,13 +864,11 @@ function finishRound() {
   renderHistory()
 }
 
-
 function updateSelection() {
   const box = document.querySelector('#selection')
   if (!box) return
   box.textContent = selectedChoice ? selectedChoice : 'Choose option'
 }
-
 
 function updatePredictionButton() {
   const button = document.querySelector('#lockPredictionBtn')
@@ -909,7 +895,6 @@ function updatePredictionButton() {
   button.disabled = false
   button.textContent = 'Lock Prediction'
 }
-
 
 function renderHistory() {
   const box = document.querySelector('#history')
@@ -960,7 +945,6 @@ function renderHistory() {
   box.innerHTML = html
 }
 
-
 /* =========================
    RESULT POPUP
 ========================= */
@@ -995,7 +979,6 @@ function showResultPopup(won, result, payout) {
     popup.remove()
   }, 5000)
 }
-
 
 /* =========================
    AVIATOR
@@ -1201,7 +1184,6 @@ function renderAviatorHistory() {
   `).join('') + `</div>`
 }
 
-
 /* =========================
    ACTIVITY
 ========================= */
@@ -1230,9 +1212,8 @@ function showActivity() {
   connectNavigation()
 }
 
-
 /* =========================
-   PROMOTION (Sub-Node Data)
+   PROMOTION
 ========================= */
 
 function showPromotion() {
@@ -1322,9 +1303,8 @@ function showPromotion() {
   connectNavigation()
 }
 
-
 /* =========================
-   WALLET (Clean, Secure & Pending Flow)
+   WALLET
 ========================= */
 
 function showWallet() {
@@ -1355,7 +1335,6 @@ function showWallet() {
     </div>
   `
 
-  // 1. DEPOSIT (Requires Admin Approval)
   document.querySelector('#depositBtn').onclick = () => {
     const actionArea = document.querySelector('#walletActionArea')
     actionArea.innerHTML = `
@@ -1384,8 +1363,8 @@ function showWallet() {
 
       const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]')
       if (deposits.some(d => d.utr === utr)) {
-        showToast('Yeh UTR pehle hi use ho chuka hai!', 'error');
-        return;
+        showToast('Yeh UTR pehle hi use ho chuka hai!', 'error')
+        return
       }
 
       const newDep = {
@@ -1406,7 +1385,6 @@ function showWallet() {
     }
   }
 
-  // 2. WITHDRAWAL (Clean title, Pending state, UPI Lock)
   document.querySelector('#withdrawBtn').onclick = () => {
     const actionArea = document.querySelector('#walletActionArea')
     actionArea.innerHTML = `
@@ -1456,7 +1434,6 @@ function showWallet() {
     }
   }
 
-  // 3. HISTORY
   document.querySelector('#historyBtn').onclick = () => {
     const withdrawals = getAllWithdrawals().filter(w => String(w.uid) === String(user.id))
     const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]').filter(d => String(d.uid) === String(user.id))
@@ -1519,7 +1496,6 @@ function showWallet() {
   connectNavigation()
 }
 
-
 /* =========================
    ACCOUNT
 ========================= */
@@ -1574,7 +1550,6 @@ function showAccount() {
 
   connectNavigation()
 }
-
 
 /* =========================
    ADMIN PANEL
@@ -1632,7 +1607,6 @@ function showAdmin() {
   adminDashboard()
 }
 
-
 function adminDashboard() {
   const users = getAllUsers()
   const withdrawals = getAllWithdrawals()
@@ -1649,7 +1623,6 @@ function adminDashboard() {
     </div>
   `
 }
-
 
 function adminWithdrawalsPanel() {
   const withdrawals = getAllWithdrawals()
@@ -1689,7 +1662,6 @@ window.updateWd = function(id, status) {
     showToast(res.message, 'error')
   }
 }
-
 
 function adminDepositsPanel() {
   const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]')
@@ -1733,7 +1705,6 @@ window.approveDep = function(id) {
   adminDepositsPanel()
 }
 
-
 function adminWinLossControl() {
   const state = getAdminState()
   document.querySelector('#adminContent').innerHTML = `
@@ -1762,7 +1733,6 @@ function adminWinLossControl() {
     showToast('Wingo Control saved successfully!', 'success')
   }
 }
-
 
 function adminDemoId() {
   document.querySelector('#adminContent').innerHTML = `
@@ -1800,7 +1770,6 @@ function adminDemoId() {
     `
   }
 }
-
 
 function adminPlayers() {
   const players = getAllUsers().filter(user => user.role === 'USER')
@@ -1843,7 +1812,6 @@ function adminPlayers() {
   })
 }
 
-
 function adminAgents() {
   const agents = getAllUsers().filter(user => user.role === 'AGENT')
 
@@ -1884,7 +1852,6 @@ function adminAgents() {
     }
   })
 }
-
 
 function adminGames() {
   const state = getAdminState()
@@ -1931,7 +1898,6 @@ function adminGames() {
     }
   })
 }
-
 
 function adminGiftCodes() {
   const state = getAdminState()
@@ -1985,7 +1951,6 @@ function adminGiftCodes() {
   })
 }
 
-
 function adminAnnouncement() {
   const state = getAdminState()
 
@@ -2004,7 +1969,6 @@ function adminAnnouncement() {
     showToast('Announcement saved', 'success')
   }
 }
-
 
 /* =========================
    WINGO TIMER
@@ -2032,7 +1996,6 @@ setInterval(
   },
   1000
 )
-
 
 /* =========================
    START APP
