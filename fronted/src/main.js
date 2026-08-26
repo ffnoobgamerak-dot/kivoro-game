@@ -38,7 +38,7 @@ import {
 } from './extras.js'
 
 /* =========================
-   GLOBAL STATE
+   GLOBAL STATE & MODES
 ========================= */
 
 const modes = [
@@ -75,7 +75,7 @@ try {
 }
 
 /* =========================
-   BASIC HELPERS
+   UTILITIES & HELPERS
 ========================= */
 
 function app() {
@@ -136,7 +136,7 @@ function stopAllSpecialTimers() {
 }
 
 /* =========================
-   NAVIGATION
+   NAVIGATION BAR
 ========================= */
 
 function navigation(active) {
@@ -168,7 +168,7 @@ function connectNavigation() {
 }
 
 /* =========================
-   LOGIN
+   AUTHENTICATION VIEWS
 ========================= */
 
 function showLogin() {
@@ -213,10 +213,6 @@ function showLogin() {
 
   document.querySelector('#goRegister').onclick = showRegister
 }
-
-/* =========================
-   REGISTER
-========================= */
 
 function showRegister() {
   currentPage = 'register'
@@ -266,7 +262,7 @@ function showRegister() {
 }
 
 /* =========================
-   HOME
+   HOME SCREEN
 ========================= */
 
 function showHome() {
@@ -389,7 +385,7 @@ function showHome() {
 }
 
 /* =========================
-   MINI GAMES
+   MINI GAMES ENGINE
 ========================= */
 
 function showMiniGame(name) {
@@ -403,7 +399,7 @@ function showMiniGame(name) {
         <button id="miniBack">←</button>
         <div>
           <strong>${escapeHtml(name)}</strong>
-          <small>Mini Game</small>
+          <small>Mini Game Center</small>
         </div>
         <div class="game-balance" id="miniBalanceDisplay">
           ${getBalance().toLocaleString()} 🪙
@@ -503,7 +499,7 @@ function showMiniGame(name) {
 }
 
 /* =========================
-   WINGO
+   WINGO ENGINE
 ========================= */
 
 function showWingo() {
@@ -1205,6 +1201,10 @@ function showActivity() {
   connectNavigation()
 }
 
+/* =========================
+   PROMOTION & SUBORDINATE DATA (YaarWin / 91 Club Style)
+========================= */
+
 function showPromotion() {
   stopAllSpecialTimers()
   currentPage = 'promotion'
@@ -1309,6 +1309,10 @@ function showPromotion() {
 
   connectNavigation()
 }
+
+/* =========================
+   WALLET & DEPOSIT / WITHDRAWAL
+========================= */
 
 function showWallet() {
   stopAllSpecialTimers()
@@ -1542,7 +1546,7 @@ function showAccount() {
 }
 
 /* =========================
-   ADMIN PANEL
+   FULL ADMIN PANEL & CONTROLS
 ========================= */
 
 function showAdmin() {
@@ -1959,6 +1963,10 @@ function adminAnnouncement() {
     showToast('Announcement saved', 'success')
   }
 }
+
+/* =========================
+   INITIAL APP BOOTSTRAP
+========================= */
 
 setInterval(
   () => {
