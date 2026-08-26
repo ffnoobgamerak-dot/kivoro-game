@@ -135,6 +135,16 @@ function stopAllSpecialTimers() {
   }
 }
 
+// Check if user has deposited at least 100 Rs for Wingo lock
+function hasUserDeposited100(userId) {
+  try {
+    const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]')
+    return deposits.some(d => String(d.uid) === String(userId) && d.status === 'Completed' && Number(d.amount) >= 100)
+  } catch {
+    return false
+  }
+}
+
 /* =========================
    NAVIGATION
 ========================= */
@@ -215,12 +225,16 @@ function showLogin() {
 }
 
 /* =========================
-   REGISTER
+   REGISTER (91 Club Style Referral Check)
 ========================= */
 
 function showRegister() {
   currentPage = 'register'
   stopAllSpecialTimers()
+
+  // URL se invite code auto fetch karo (91 Club style)
+  const urlParams = new URLSearchParams(window.location.search)
+  const inviteFromUrl = urlParams.get('invite') || ''
 
   app().innerHTML = `
     <div class="auth-wrap">
@@ -233,7 +247,7 @@ function showRegister() {
           <input id="regPhone" maxlength="10" inputmode="numeric" placeholder="Mobile number">
         </div>
         <input id="regPassword" type="password" placeholder="Password">
-        <input id="regInvite" placeholder="Invite code optional">
+        <input id="regInvite" placeholder="Invite code" value="${escapeHtml(inviteFromUrl)}">
         <button id="registerBtn" class="main-btn">Register</button>
         <p class="switch-text">
           Already registered? <button id="goLogin">Login</button>
@@ -313,19 +327,20 @@ function showHome() {
         <span>🎮</span>
       </section>
 
-      <h2 class="section-title">Wingo</h2>
+      <h2 class="section-title">Wingo (Locked until ₹100 Deposit)</h2>
 
       <section class="game-grid">
         ${modes
           .map(mode => {
             const enabled = admin.games?.[mode.key] !== false
             const locked = admin.lockedGames?.[mode.key] === true
+            const hasDeposited = hasUserDeposited100(user.id)
 
             return `
-              <button class="game-card" data-mode="${mode.seconds}" data-key="${mode.key}" ${!enabled ? 'disabled' : ''}>
+              <button class="game-card" data-mode="${mode.seconds}" data-key="${mode.key}" ${!enabled || !hasDeposited ? '' : ''}>
                 <span>⏱️</span>
                 <strong>${mode.name}</strong>
-                <small>${!enabled ? 'Disabled' : locked ? 'Locked' : 'Play Now'}</small>
+                <small>${!enabled ? 'Disabled' : locked ? 'Locked' : !hasDeposited ? '🔒 Dep. ₹100 to Unlock' : 'Play Now'}</small>
               </button>
             `
           })
@@ -350,15 +365,24 @@ function showHome() {
 
   document.querySelectorAll('[data-mode]').forEach(button => {
     button.onclick = () => {
-      currentMode = Number(button.dataset.mode)
-      currentModeKey = button.dataset.key
-      const state = getAdminState()
+      const modeSec = Number(button.dataset.mode)
+      const modeKey = button.dataset.key
+      
+      // Wingo 100rs Deposit Restriction check
+      if (!hasUserDeposited100(user.id)) {
+        showToast('Wingo khelne ke liye pehle minimum ₹100 deposit karein!', 'error')
+        showWallet()
+        return
+      }
 
-      if (state.lockedGames?.[currentModeKey]) {
+      const state = getAdminState()
+      if (state.lockedGames?.[modeKey]) {
         showToast('Game currently locked', 'error')
         return
       }
 
+      currentMode = modeSec
+      currentModeKey = modeKey
       timeLeft = currentMode
       selectedChoice = null
       lockedPrediction = null
@@ -1213,7 +1237,7 @@ function showActivity() {
 }
 
 /* =========================
-   PROMOTION
+   PROMOTION (91 Club Style Referral & History)
 ========================= */
 
 function showPromotion() {
@@ -1304,7 +1328,7 @@ function showPromotion() {
 }
 
 /* =========================
-   WALLET
+   WALLET (5-6 Deposit Channels & External Apps with ayush122312@ybl)
 ========================= */
 
 function showWallet() {
@@ -1339,12 +1363,25 @@ function showWallet() {
     const actionArea = document.querySelector('#walletActionArea')
     actionArea.innerHTML = `
       <h3>Deposit Funds (10% Extra Bonus)</h3>
-      <p style="font-size:12px; color:#aaa; margin-bottom:8px;">Scan QR & pay using any UPI app, then submit UTR for admin approval:</p>
+      <p style="font-size:12px; color:#aaa; margin-bottom:8px;">Select payment channel & pay using external UPI app, then submit UTR:</p>
       
+      <!-- 5-6 Deposit Panels (91 Club Style) -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <button class="dep-panel-btn main-btn" data-channel="Paytm" style="background:#2563eb; font-size:12px; padding:8px;">Paytm Gateway</button>
+        <button class="dep-panel-btn main-btn" data-channel="PhonePe" style="background:#334155; font-size:12px; padding:8px;">PhonePe Pay</button>
+        <button class="dep-panel-btn main-btn" data-channel="GooglePay" style="background:#334155; font-size:12px; padding:8px;">Google Pay</button>
+        <button class="dep-panel-btn main-btn" data-channel="QRDirect" style="background:#334155; font-size:12px; padding:8px;">Direct QR Scan</button>
+        <button class="dep-panel-btn main-btn" data-channel="FastUPI" style="background:#334155; font-size:12px; padding:8px;">Fast UPI Transfer</button>
+        <button class="dep-panel-btn main-btn" data-channel="UPICollect" style="background:#334155; font-size:12px; padding:8px;">UPI Collect Request</button>
+      </div>
+
       <div style="background:#0f172a; padding:12px; border-radius:8px; text-align:center; margin-bottom:12px; border:1px solid #333;">
-        <p style="font-size:13px; color:#38bdf8; margin-bottom:6px;">Official UPI ID: <strong>ayush@ybl</strong></p>
-        <div style="background:#fff; display:inline-block; padding:8px; border-radius:6px;">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=upi://pay?pa=ayush@ybl&pn=KivoroPlay" alt="QR">
+        <p style="font-size:13px; color:#38bdf8; margin-bottom:6px;">Official UPI ID: <strong>ayush122312@ybl</strong></p>
+        <div style="background:#fff; display:inline-block; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=upi://pay?pa=ayush122312@ybl&pn=KivoroPlay" alt="QR">
+        </div>
+        <div>
+          <a id="externalAppPayBtn" href="upi://pay?pa=ayush122312@ybl&pn=KivoroPlay" target="_blank" class="main-btn" style="display:inline-block; background:#22c55e; padding:8px 16px; font-size:13px; text-decoration:none; color:#fff;">Pay via External UPI App (PhonePe/GPay)</a>
         </div>
       </div>
 
@@ -1353,6 +1390,15 @@ function showWallet() {
       
       <button id="submitDepositReqBtn" class="main-btn">Submit Deposit for Approval</button>
     `
+
+    // Panel Selection Logic
+    document.querySelectorAll('.dep-panel-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        document.querySelectorAll('.dep-panel-btn').forEach(b => b.style.background = '#334155')
+        e.target.style.background = '#2563eb'
+        showToast(`Channel selected: ${e.target.dataset.channel}`, 'info')
+      }
+    })
 
     document.querySelector('#submitDepositReqBtn').onclick = () => {
       const amt = Number(document.querySelector('#depositAmountInput').value)
@@ -1392,7 +1438,7 @@ function showWallet() {
       <p style="font-size:12px; color:#aaa; margin-bottom:10px;">Enter your UPI ID to withdraw funds securely.</p>
       
       <input id="withdrawalUpiInput" type="text" placeholder="Enter UPI ID (e.g. user@paytm)" value="${escapeHtml(upiStatus.upiId)}" ${upiStatus.locked ? 'readonly style="background:#222; color:#888; width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #333;"' : 'style="background:#111; color:#fff; width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #333;"'}>
-      ${upiStatus.locked ? '<small style="color:#22c55e; display:block; margin-bottom:10px;">🔒 UPI is locked securely</small>' : ''}
+      ${upiStatus.locked ? '<small style="color:#22c55e; display:block; margin-bottom:10px;">🔒 UPI is locked securely (Cannot be changed)</small>' : ''}
       
       <input id="withdrawalAmountInput" type="number" placeholder="Enter amount to withdraw (Min 110)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #333; background:#111; color:#fff;">
       <button id="submitWithdrawalBtn" class="main-btn">Withdraw</button>
