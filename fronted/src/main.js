@@ -1311,7 +1311,7 @@ function showPromotion() {
 }
 
 /* =========================
-   WALLET & DEPOSIT / WITHDRAWAL
+   WALLET & DEPOSIT / WITHDRAWAL (With Secure UPI & 6 Channels)
 ========================= */
 
 function showWallet() {
@@ -1346,11 +1346,40 @@ function showWallet() {
     const actionArea = document.querySelector('#walletActionArea')
     actionArea.innerHTML = `
       <h3>Deposit Funds (10% Extra Bonus)</h3>
-      <p style="font-size:12px; color:#aaa; margin-bottom:8px;">Enter amount & UTR number after payment:</p>
+      <p style="font-size:12px; color:#aaa; margin-bottom:8px;">Select payment channel & pay using external UPI app, then submit UTR:</p>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <button class="dep-panel-btn main-btn" data-channel="Paytm" style="background:#10b981; font-size:12px; padding:8px;">Paytm Gateway</button>
+        <button class="dep-panel-btn main-btn" data-channel="PhonePe" style="background:#334155; font-size:12px; padding:8px;">PhonePe Pay</button>
+        <button class="dep-panel-btn main-btn" data-channel="GooglePay" style="background:#334155; font-size:12px; padding:8px;">Google Pay</button>
+        <button class="dep-panel-btn main-btn" data-channel="QRDirect" style="background:#334155; font-size:12px; padding:8px;">Direct QR Scan</button>
+        <button class="dep-panel-btn main-btn" data-channel="FastUPI" style="background:#334155; font-size:12px; padding:8px;">Fast UPI Transfer</button>
+        <button class="dep-panel-btn main-btn" data-channel="UPICollect" style="background:#334155; font-size:12px; padding:8px;">UPI Collect Request</button>
+      </div>
+
+      <div style="background:#0f172a; padding:12px; border-radius:8px; text-align:center; margin-bottom:12px; border:1px solid #334155;">
+        <p style="font-size:13px; color:#38bdf8; margin-bottom:6px;">Official UPI: <strong>[Securely Protected]</strong></p>
+        <div style="background:#fff; display:inline-block; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=upi://pay?pa=ayush122312@ybl&pn=KivoroPlay" alt="QR">
+        </div>
+        <div>
+          <a id="externalAppPayBtn" href="upi://pay?pa=ayush122312@ybl&pn=KivoroPlay" target="_blank" class="main-btn" style="display:inline-block; background:#10b981; padding:8px 16px; font-size:13px; text-decoration:none; color:#fff;">Pay via External UPI App (PhonePe/GPay)</a>
+        </div>
+      </div>
+
       <input id="depositAmountInput" type="number" placeholder="Enter Amount (Min 100)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
       <input id="depositUtrInput" type="text" placeholder="Enter 12-digit UTR / Ref Number" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
+      
       <button id="submitDepositReqBtn" class="main-btn">Submit Deposit for Approval</button>
     `
+
+    document.querySelectorAll('.dep-panel-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        document.querySelectorAll('.dep-panel-btn').forEach(b => b.style.background = '#334155')
+        e.target.style.background = '#10b981'
+        showToast(`Channel selected: ${e.target.dataset.channel}`, 'info')
+      }
+    })
 
     document.querySelector('#submitDepositReqBtn').onclick = () => {
       const amt = Number(document.querySelector('#depositAmountInput').value)
