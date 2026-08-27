@@ -64,6 +64,7 @@ let history = []
 let aviatorTimer = null
 let aviatorRestartTimer = null
 let wingoInterval = null
+let liveTickerInterval = null
 
 try {
   const savedHistory = JSON.parse(
@@ -135,6 +136,55 @@ function stopAllSpecialTimers() {
   }
 }
 
+// 🛡️ Game Entry Deposit Guard (100 Rs Check)
+function checkGameEntry(onSuccess) {
+  const balance = getBalance()
+  if (balance < 100) {
+    showDepositPromptModal()
+    return false
+  }
+  if (typeof onSuccess === 'function') {
+    onSuccess()
+  }
+  return true
+}
+
+function showDepositPromptModal() {
+  document.querySelector('.deposit-prompt-modal')?.remove()
+
+  const modal = document.createElement('div')
+  modal.className = 'deposit-prompt-modal'
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+    display: grid; place-items: center; z-index: 999999;
+  `
+  modal.innerHTML = `
+    <div style="background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #f59e0b; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; text-align: center; color: #fff; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);">
+      <div style="font-size: 50px; margin-bottom: 10px;">⚠️</div>
+      <h3 style="color: #facc15; margin-bottom: 8px; font-size: 20px;">Recharge Required</h3>
+      <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 20px;">
+        Game me play karne ke liye minimum <strong>₹100</strong> ka deposit zaroori hai. Kripya pehle recharge karein.
+      </p>
+      <div style="display: flex; gap: 10px;">
+        <button id="cancelPromptBtn" style="flex: 1; padding: 10px; background: #334155; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer;">Cancel</button>
+        <button id="goToDepositBtn" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer;">Deposit ₹100</button>
+      </div>
+    </div>
+  `
+
+  document.body.appendChild(modal)
+
+  document.querySelector('#cancelPromptBtn').onclick = () => modal.remove()
+  document.querySelector('#goToDepositBtn').onclick = () => {
+    modal.remove()
+    showWallet()
+    setTimeout(() => {
+      document.querySelector('#depositBtn')?.click()
+    }, 100)
+  }
+}
+
 /* =========================
    NAVIGATION BAR
 ========================= */
@@ -168,105 +218,114 @@ function connectNavigation() {
 }
 
 /* =========================
-   AUTHENTICATION VIEWS
+   AUTHENTICATION VIEWS (91 Club Modern Style)
 ========================= */
 
-function showLogin() {
-  currentPage = 'login'
-  stopAllSpecialTimers()
-
-  app().innerHTML = `
-    <div class="auth-wrap">
-      <div class="auth-card">
-        <h1>Kivoro Play</h1>
-        <p>Login to continue</p>
-        <div class="phone-box">
-          <span>+91</span>
-          <input id="loginPhone" maxlength="10" inputmode="numeric" placeholder="Mobile number">
-        </div>
-        <input id="loginPassword" type="password" placeholder="Password">
-        <button id="loginBtn" class="main-btn">Login</button>
-        <p class="switch-text">
-          New user? <button id="goRegister">Create Account</button>
-        </p>
-      </div>
-    </div>
-  `
-
-  document.querySelector('#loginBtn').onclick = () => {
-    const result = loginUser(
-      document.querySelector('#loginPhone').value,
-      document.querySelector('#loginPassword').value
-    )
-
-    if (!result.success) {
-      showToast(result.message, 'error')
-      return
-    }
-
-    if (isAdmin(result.user)) {
-      showAdmin()
-    } else {
-      showHome()
-    }
-  }
-
-  document.querySelector('#goRegister').onclick = showRegister
-}
-
-function showRegister() {
-  currentPage = 'register'
+function showAuthTab(type = 'login') {
+  currentPage = type
   stopAllSpecialTimers()
 
   const urlParams = new URLSearchParams(window.location.search)
   const inviteFromUrl = urlParams.get('invite') || ''
 
   app().innerHTML = `
-    <div class="auth-wrap">
-      <div class="auth-card">
-        <h1>Kivoro Play</h1>
-        <p>Create Account</p>
-        <input id="regName" placeholder="Your name">
-        <div class="phone-box">
-          <span>+91</span>
-          <input id="regPhone" maxlength="10" inputmode="numeric" placeholder="Mobile number">
+    <div class="auth-wrap" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at top, #1e293b, #090d16); padding: 15px;">
+      <div class="auth-card" style="background: #111827; border: 1px solid #1f2937; border-radius: 20px; width: 100%; max-width: 380px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 38px; margin-bottom: 4px;">👑</div>
+          <h1 style="color: #facc15; font-size: 24px; font-weight: 900; letter-spacing: 1px;">KIVORO CLUB</h1>
+          <p style="color: #94a3b8; font-size: 13px;">Official Gaming & Earning Platform</p>
         </div>
-        <input id="regPassword" type="password" placeholder="Password">
-        <input id="regInvite" placeholder="Invite code" value="${escapeHtml(inviteFromUrl)}">
-        <button id="registerBtn" class="main-btn">Register</button>
-        <p class="switch-text">
-          Already registered? <button id="goLogin">Login</button>
-        </p>
+
+        <div style="display: flex; background: #0f172a; border-radius: 12px; padding: 4px; margin-bottom: 20px; border: 1px solid #334155;">
+          <button id="tabLoginBtn" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; background: ${type === 'login' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent'}; color: ${type === 'login' ? '#fff' : '#94a3b8'};">Login</button>
+          <button id="tabRegBtn" style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; background: ${type === 'register' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent'}; color: ${type === 'register' ? '#fff' : '#94a3b8'};">Register</button>
+        </div>
+
+        <div id="authFormArea">
+          ${
+            type === 'login'
+              ? `
+            <div class="phone-box" style="display: flex; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 0 12px; margin-bottom: 12px;">
+              <span style="color: #facc15; font-weight: bold; margin-right: 8px;">+91</span>
+              <input id="loginPhone" maxlength="10" inputmode="numeric" placeholder="Mobile Number" style="flex: 1; background: transparent; border: none; color: #fff; padding: 12px 0; outline: none; font-size: 14px;">
+            </div>
+            <input id="loginPassword" type="password" placeholder="Password" style="width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; padding: 12px; margin-bottom: 18px; outline: none; font-size: 14px;">
+            <button id="loginBtn" class="main-btn" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; cursor: pointer;">Log in</button>
+          `
+              : `
+            <input id="regName" placeholder="Full Name" style="width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; padding: 12px; margin-bottom: 12px; outline: none; font-size: 14px;">
+            <div class="phone-box" style="display: flex; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 0 12px; margin-bottom: 12px;">
+              <span style="color: #facc15; font-weight: bold; margin-right: 8px;">+91</span>
+              <input id="regPhone" maxlength="10" inputmode="numeric" placeholder="Mobile Number" style="flex: 1; background: transparent; border: none; color: #fff; padding: 12px 0; outline: none; font-size: 14px;">
+            </div>
+            <input id="regPassword" type="password" placeholder="Set Password" style="width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; padding: 12px; margin-bottom: 12px; outline: none; font-size: 14px;">
+            <input id="regInvite" placeholder="Invite Code (Optional)" value="${escapeHtml(inviteFromUrl)}" style="width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; padding: 12px; margin-bottom: 18px; outline: none; font-size: 14px;">
+            <button id="registerBtn" class="main-btn" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; cursor: pointer;">Create Account</button>
+          `
+          }
+        </div>
       </div>
     </div>
   `
 
-  document.querySelector('#registerBtn').onclick = () => {
-    const result = registerUser(
-      document.querySelector('#regName').value,
-      document.querySelector('#regPhone').value,
-      document.querySelector('#regPassword').value,
-      document.querySelector('#regInvite').value
-    )
+  document.querySelector('#tabLoginBtn').onclick = () => showAuthTab('login')
+  document.querySelector('#tabRegBtn').onclick = () => showAuthTab('register')
 
-    if (!result.success) {
-      showToast(result.message, 'error')
-      return
+  if (type === 'login') {
+    document.querySelector('#loginBtn').onclick = () => {
+      const result = loginUser(
+        document.querySelector('#loginPhone').value,
+        document.querySelector('#loginPassword').value
+      )
+
+      if (!result.success) {
+        showToast(result.message, 'error')
+        return
+      }
+
+      if (isAdmin(result.user)) {
+        showAdmin()
+      } else {
+        showHome()
+      }
     }
+  } else {
+    document.querySelector('#registerBtn').onclick = () => {
+      const result = registerUser(
+        document.querySelector('#regName').value,
+        document.querySelector('#regPhone').value,
+        document.querySelector('#regPassword').value,
+        document.querySelector('#regInvite').value
+      )
 
-    showToast('Account created successfully!', 'success')
-    showHome()
+      if (!result.success) {
+        showToast(result.message, 'error')
+        return
+      }
+
+      showToast('Account created successfully!', 'success')
+      showHome()
+    }
   }
+}
 
-  document.querySelector('#goLogin').onclick = showLogin
+function showLogin() {
+  showAuthTab('login')
+}
+
+function showRegister() {
+  showAuthTab('register')
 }
 
 /* =========================
-   HOME SCREEN
+   HOME SCREEN (With Live Winner Ticker)
 ========================= */
 
 function showHome() {
   stopAllSpecialTimers()
+  if (liveTickerInterval) clearInterval(liveTickerInterval)
+
   const user = getCurrentUser()
 
   if (!user) {
@@ -286,14 +345,14 @@ function showHome() {
     <div class="app-shell">
       <header class="topbar">
         <div>
-          <h2>Kivoro Play</h2>
-          <small>Welcome ${escapeHtml(user.name)}</small>
+          <h2 style="color:#facc15; font-weight:900;">👑 Kivoro Club</h2>
+          <small style="color:#94a3b8;">UID: ${escapeHtml(user.id)}</small>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
           <button id="supportBtn" style="background:#2563eb; border:none; padding:6px 12px; border-radius:6px; color:#fff; font-size:12px; font-weight:bold; cursor:pointer;">🎧 Support</button>
-          <div class="balance-box">
-            <span>Balance</span>
-            <strong>${getBalance().toLocaleString()} Coins</strong>
+          <div class="balance-box" style="background:#1e293b; padding:6px 12px; border-radius:8px; border:1px solid #334155;">
+            <span style="font-size:10px; color:#94a3b8; display:block;">Balance</span>
+            <strong style="color:#22c55e;">₹${getBalance().toLocaleString()}</strong>
           </div>
         </div>
       </header>
@@ -304,15 +363,24 @@ function showHome() {
           : ''
       }
 
-      <section class="home-banner">
-        <div>
-          <h1>Game Center</h1>
-          <p>Live-style game experience</p>
+      <!-- Live 91 Club Style Winning Marquee -->
+      <section style="background:#0f172a; padding:8px 12px; border-radius:10px; margin:10px 0; border-left:4px solid #f59e0b; display:flex; align-items:center; gap:8px; font-size:12px; overflow:hidden;">
+        <span style="color:#f59e0b; font-weight:bold; white-space:nowrap;">🔥 LIVE WINS:</span>
+        <div id="liveWinnerTicker" style="color:#cbd5e1; white-space:nowrap; transition: all 0.5s ease;">
+          User 98***71 won ₹450 in Wingo 30s
         </div>
-        <span>🎮</span>
       </section>
 
-      <h2 class="section-title">Wingo Games</h2>
+      <section class="home-banner" style="background: linear-gradient(135deg, #1e3a8a, #0f172a); border-radius:14px; padding:15px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h1 style="font-size:20px; color:#facc15; margin-bottom:4px;">Lottery & Casino</h1>
+          <p style="font-size:12px; color:#cbd5e1;">Fair, Secure & Instant Payouts</p>
+          <button id="quickRechargeHome" style="margin-top:8px; background:#10b981; border:none; color:#fff; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">➕ Quick Deposit</button>
+        </div>
+        <span style="font-size:45px;">🎰</span>
+      </section>
+
+      <h2 class="section-title">Wingo Color Prediction</h2>
 
       <section class="game-grid">
         ${modes
@@ -331,7 +399,7 @@ function showHome() {
           .join('')}
       </section>
 
-      <h2 class="section-title">More Games</h2>
+      <h2 class="section-title">Casino & Mini Games</h2>
 
       <section class="more-games">
         <button class="mini-game" data-mini="Dice">🎲 <strong>Dice</strong></button>
@@ -346,7 +414,14 @@ function showHome() {
   `
 
   document.querySelector('#supportBtn').onclick = openCustomerService
+  document.querySelector('#quickRechargeHome').onclick = () => {
+    showWallet()
+    setTimeout(() => {
+      document.querySelector('#depositBtn')?.click()
+    }, 100)
+  }
 
+  // Wingo Entry with ₹100 balance check
   document.querySelectorAll('[data-mode]').forEach(button => {
     button.onclick = () => {
       const modeSec = Number(button.dataset.mode)
@@ -358,30 +433,64 @@ function showHome() {
         return
       }
 
-      currentMode = modeSec
-      currentModeKey = modeKey
-      timeLeft = currentMode
-      selectedChoice = null
-      lockedPrediction = null
-      showWingo()
+      checkGameEntry(() => {
+        currentMode = modeSec
+        currentModeKey = modeKey
+        timeLeft = currentMode
+        selectedChoice = null
+        lockedPrediction = null
+        showWingo()
+      })
     }
   })
 
+  // Mini Games Entry with ₹100 balance check
   document.querySelectorAll('[data-mini]').forEach(button => {
     button.onclick = () => {
-      showMiniGame(button.dataset.mini)
+      const gName = button.dataset.mini
+      checkGameEntry(() => {
+        showMiniGame(gName)
+      })
     }
   })
 
+  // Aviator Entry with ₹100 balance check
   const avBtn = document.querySelector('#aviatorBtn')
   if (avBtn) {
     avBtn.onclick = (e) => {
       e.preventDefault()
-      showAviator()
+      checkGameEntry(() => {
+        showAviator()
+      })
     }
   }
 
+  // Live Winner Ticker Simulation
+  startLiveWinnerTicker()
   connectNavigation()
+}
+
+function startLiveWinnerTicker() {
+  const ticker = document.querySelector('#liveWinnerTicker')
+  if (!ticker) return
+
+  const mockUsers = ['98***21', '87***64', '91***30', '95***19', '70***82', '81***43']
+  const mockGames = ['Wingo 30s', 'Wingo 1M', 'Aviator', 'Dice', 'Wheel']
+  const mockPrizes = [200, 450, 900, 1800, 3600, 520]
+
+  liveTickerInterval = setInterval(() => {
+    const u = mockUsers[Math.floor(Math.random() * mockUsers.length)]
+    const g = mockGames[Math.floor(Math.random() * mockGames.length)]
+    const p = mockPrizes[Math.floor(Math.random() * mockPrizes.length)]
+    const el = document.querySelector('#liveWinnerTicker')
+    if (el) {
+      el.style.opacity = '0'
+      setTimeout(() => {
+        el.innerHTML = `User <strong style="color:#facc15;">${u}</strong> won <strong style="color:#22c55e;">₹${p}</strong> in ${g}`
+        el.style.opacity = '1'
+      }, 300)
+    }
+  }, 3500)
 }
 
 /* =========================
@@ -531,7 +640,7 @@ function showWingo() {
       </section>
 
       <section class="normal-card">
-        <div id="wingoStatus" style="text-align:center; padding:15px; border-radius:14px; background:#16263b; margin-bottom:20px;">
+        <div id="wingoStatus" style="text-align:center; padding:15px; border-radius:14px; background:#16263b; margin-bottom:20px; font-weight:bold; border:1px solid #334155;">
           Round running
         </div>
 
@@ -953,16 +1062,18 @@ function showResultPopup(won, result, payout) {
   popup.className = 'result-popup'
   popup.style.cssText = `
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8); display: grid; place-items:center; z-index:99999;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: grid; place-items:center; z-index:99999;
   `
   popup.innerHTML = `
-    <div class="result-popup-card" style="background:#1e293b; padding:30px; border-radius:16px; text-align:center; width:90%; max-width:320px; color:#fff; box-shadow:0 15px 35px rgba(0,0,0,0.6);">
-      <div style="font-size:65px; margin-bottom:10px;">${won ? '🏆' : '🎯'}</div>
-      <h2 style="color:${won ? '#22c55e' : '#ef4444'}; font-size:24px; margin-bottom:10px;">${won ? 'WIN' : 'LOSS'}</h2>
-      <div style="font-size:38px; font-weight:900; margin:10px 0; background:#0f172a; padding:10px; border-radius:10px;">${result.number}</div>
-      <p style="color:#94a3b8; margin-bottom:15px;">${result.color} • ${result.size}</p>
-      ${won ? `<p style="color:#22c55e; font-weight:bold; font-size:16px; margin-bottom:15px;">Won: +${payout} Coins</p>` : ''}
-      <button id="closeResultPopup" class="main-btn" style="width:100%;">Continue</button>
+    <div class="result-popup-card" style="background:#1e293b; border: 2px solid ${won ? '#22c55e' : '#ef4444'}; padding:30px; border-radius:20px; text-align:center; width:90%; max-width:320px; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.8);">
+      <div style="font-size:65px; margin-bottom:10px;">${won ? '🎉' : '💀'}</div>
+      <h2 style="color:${won ? '#22c55e' : '#ef4444'}; font-size:26px; font-weight:900; margin-bottom:10px;">${won ? 'CONGRATULATIONS!' : 'GAME OVER'}</h2>
+      <div style="font-size:42px; font-weight:900; margin:12px 0; background:#0f172a; padding:12px; border-radius:12px; border:1px solid #334155; color:#facc15;">
+        ${result.number}
+      </div>
+      <p style="color:#cbd5e1; font-weight:bold; margin-bottom:15px;">${result.color} • ${result.size}</p>
+      ${won ? `<p style="color:#22c55e; font-weight:900; font-size:18px; margin-bottom:18px; background:rgba(34,197,94,0.1); padding:8px; border-radius:8px;">+₹${payout} Won</p>` : `<p style="color:#ef4444; font-weight:bold; margin-bottom:18px;">Try Again In Next Round</p>`}
+      <button id="closeResultPopup" class="main-btn" style="width:100%; padding:12px; font-size:15px; font-weight:bold; background:${won ? '#22c55e' : '#334155'};">Continue</button>
     </div>
   `
 
@@ -974,7 +1085,7 @@ function showResultPopup(won, result, payout) {
 
   setTimeout(() => {
     popup.remove()
-  }, 5000)
+  }, 4000)
 }
 
 function getAviatorHistory() {
@@ -1183,7 +1294,7 @@ function showActivity() {
 
   app().innerHTML = `
     <div class="app-shell">
-      <h1>Activity</h1>
+      <h1>Activity & Record Center</h1>
       <section class="history-panel">
         <h2>Wingo Results</h2>
         <div id="history"></div>
@@ -1202,7 +1313,7 @@ function showActivity() {
 }
 
 /* =========================
-   PROMOTION & SUBORDINATE DATA (YaarWin / 91 Club Style)
+   PROMOTION & SUBORDINATE DATA
 ========================= */
 
 function showPromotion() {
@@ -1311,7 +1422,7 @@ function showPromotion() {
 }
 
 /* =========================
-   WALLET & DEPOSIT / WITHDRAWAL (With Secure UPI & 6 Channels)
+   WALLET & DEPOSIT / WITHDRAWAL
 ========================= */
 
 function showWallet() {
@@ -1323,9 +1434,9 @@ function showWallet() {
   app().innerHTML = `
     <div class="app-shell">
       <h1>Wallet</h1>
-      <section class="wallet-card">
+      <section class="wallet-card" style="background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #334155;">
         <span>Available Balance</span>
-        <strong>${getBalance().toLocaleString()} Coins</strong>
+        <strong style="color: #22c55e; font-size: 28px;">₹${getBalance().toLocaleString()}</strong>
       </section>
 
       <section class="wallet-buttons">
@@ -1358,7 +1469,7 @@ function showWallet() {
       </div>
 
       <div style="background:#0f172a; padding:12px; border-radius:8px; text-align:center; margin-bottom:12px; border:1px solid #334155;">
-        <p style="font-size:13px; color:#38bdf8; margin-bottom:6px;">Official UPI: <strong>[Securely Protected]</strong></p>
+        <p style="font-size:13px; color:#38bdf8; margin-bottom:6px;">Official UPI QR Code</p>
         <div style="background:#fff; display:inline-block; padding:8px; border-radius:6px; margin-bottom:8px;">
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=upi://pay?pa=ayush122312@ybl&pn=KivoroPlay" alt="QR">
         </div>
@@ -1483,7 +1594,7 @@ function showWallet() {
       }
       container.innerHTML = withdrawals.map(w => `
         <div style="background:#0f172a; padding:8px; margin-bottom:6px; border-radius:6px; border-left:3px solid ${w.status === 'Completed' ? '#22c55e' : w.status === 'Rejected' ? '#ef4444' : '#facc15'};">
-          <strong>${w.amount} Coins</strong> via UPI (${escapeHtml(w.upi)})<br>
+          <strong>₹${w.amount}</strong> via UPI (${escapeHtml(w.upi)})<br>
           <span style="color:#aaa;">Status: <strong>${w.status}</strong></span><br>
           <small style="color:#666;">${w.date}</small>
         </div>
@@ -1523,49 +1634,188 @@ function showWallet() {
   connectNavigation()
 }
 
+/* =========================
+   91 CLUB STYLE ACCOUNT & PROFILE
+========================= */
+
 function showAccount() {
   stopAllSpecialTimers()
   currentPage = 'account'
   const user = getCurrentUser()
 
+  const userBets = getUserBetRecords(user.id)
+  const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]').filter(d => String(d.uid) === String(user.id))
+  const withdrawals = getAllWithdrawals().filter(w => String(w.uid) === String(user.id))
+
   app().innerHTML = `
-    <div class="app-shell">
-      <h1>My Account</h1>
-      <section class="normal-card">
-        <div class="profile-row">
-          <div class="avatar">
+    <div class="app-shell" style="padding-bottom: 75px;">
+      
+      <!-- 91 Club Header & Profile Avatar Card -->
+      <section style="background: linear-gradient(135deg, #1e3a8a, #0f172a); border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid #334155;">
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 15px;">
+          <div style="width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: grid; place-items: center; font-size: 24px; font-weight: 900; color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
             ${escapeHtml(user.name.charAt(0).toUpperCase())}
           </div>
-          <div>
-            <h2>${escapeHtml(user.name)}</h2>
-            <p>+91 ${escapeHtml(user.phone)}</p>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h2 style="font-size: 18px; color: #fff; margin: 0;">${escapeHtml(user.name)}</h2>
+              <span style="background: #f59e0b; color: #000; font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 4px;">VIP 1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+              <span style="color: #94a3b8; font-size: 12px;">UID: <strong style="color: #fff;">${escapeHtml(user.id)}</strong></span>
+              <button id="copyUidBtn" style="background: #334155; border: none; color: #38bdf8; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer;">📋 Copy</button>
+            </div>
+            <span style="color: #64748b; font-size: 11px; display: block; margin-top: 2px;">Phone: +91 ${escapeHtml(user.phone)}</span>
           </div>
         </div>
 
-        <div class="account-row">
-          <span>User ID</span>
-          <strong>${escapeHtml(user.id)}</strong>
-        </div>
-
-        <div class="account-row">
-          <span>Referral</span>
-          <strong>${escapeHtml(user.referralCode)}</strong>
-        </div>
-
-        <div class="account-row">
-          <span>Balance</span>
-          <strong>${getBalance().toLocaleString()}</strong>
+        <!-- 91 Club Wallet Info Box -->
+        <div style="background: rgba(15, 23, 42, 0.75); border-radius: 12px; padding: 14px; border: 1px solid #1e293b;">
+          <span style="font-size: 12px; color: #94a3b8; display: block;">Total Wallet Balance</span>
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px;">
+            <strong style="font-size: 26px; color: #22c55e;">₹${getBalance().toLocaleString()}</strong>
+            <div style="display: flex; gap: 8px;">
+              <button id="accDepositBtn" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer;">Deposit</button>
+              <button id="accWithdrawBtn" style="background: #334155; border: none; color: #fff; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer;">Withdraw</button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <button id="supportAccountBtn" class="main-btn" style="background:#2563eb; margin-bottom:10px;">🎧 Customer Support</button>
-      <button id="logoutBtn" class="logout-btn">Logout</button>
+      <!-- 91 Club Transaction History Section with Tabs -->
+      <section class="normal-card" style="margin-bottom: 15px;">
+        <h3 style="margin-bottom: 12px; font-size: 16px; color: #facc15;">📊 Transaction & Game History</h3>
+        
+        <div style="display: flex; background: #0f172a; border-radius: 8px; padding: 3px; margin-bottom: 12px;">
+          <button id="tabBetHistory" class="acc-tab-btn active" style="flex: 1; padding: 8px; border: none; border-radius: 6px; background: #2563eb; color: #fff; font-size: 12px; font-weight: bold; cursor: pointer;">Game Bets</button>
+          <button id="tabDepHistory" class="acc-tab-btn" style="flex: 1; padding: 8px; border: none; border-radius: 6px; background: transparent; color: #94a3b8; font-size: 12px; font-weight: bold; cursor: pointer;">Deposits</button>
+          <button id="tabWdHistory" class="acc-tab-btn" style="flex: 1; padding: 8px; border: none; border-radius: 6px; background: transparent; color: #94a3b8; font-size: 12px; font-weight: bold; cursor: pointer;">Withdrawals</button>
+        </div>
+
+        <div id="accHistoryContent" style="max-height: 240px; overflow-y: auto;"></div>
+      </section>
+
+      <section class="normal-card" style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #334155;">
+          <span>Invitation Code</span>
+          <strong style="color: #38bdf8;">${escapeHtml(user.referralCode)}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+          <span>Security Status</span>
+          <strong style="color: #22c55e;">Verified ✅</strong>
+        </div>
+      </section>
+
+      <button id="supportAccountBtn" class="main-btn" style="background:#2563eb; margin-bottom:10px;">🎧 24/7 Customer Support</button>
+      <button id="logoutBtn" class="logout-btn">Log out Account</button>
       ${navigation('account')}
     </div>
   `
 
-  document.querySelector('#supportAccountBtn').onclick = openCustomerService
+  document.querySelector('#copyUidBtn').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(user.id)
+      showToast(`UID ${user.id} copied!`, 'success')
+    } catch {
+      showToast(user.id, 'info')
+    }
+  }
 
+  document.querySelector('#accDepositBtn').onclick = () => {
+    showWallet()
+    setTimeout(() => {
+      document.querySelector('#depositBtn')?.click()
+    }, 100)
+  }
+
+  document.querySelector('#accWithdrawBtn').onclick = () => {
+    showWallet()
+    setTimeout(() => {
+      document.querySelector('#withdrawBtn')?.click()
+    }, 100)
+  }
+
+  const renderAccBets = () => {
+    const container = document.querySelector('#accHistoryContent')
+    if (!userBets.length) {
+      container.innerHTML = '<p style="text-align:center; color:#64748b; padding:15px; font-size:12px;">No game bets yet.</p>'
+      return
+    }
+    container.innerHTML = userBets.map(b => `
+      <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid ${b.result === 'WIN' ? '#22c55e' : '#ef4444'}; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong style="color:#fff;">${b.game}</strong> (#${b.period || 'Round'})<br>
+          <span style="color:#94a3b8;">Choice: ${b.choice || '—'} | Bet: ₹${b.bet}</span><br>
+          <small style="color:#64748b;">${b.date}</small>
+        </div>
+        <div style="text-align: right;">
+          <strong style="color:${b.result === 'WIN' ? '#22c55e' : '#ef4444'}; font-size:13px;">${b.result}</strong><br>
+          <small style="color:#cbd5e1; font-weight:bold;">${b.payout ? '+₹' + b.payout : '₹0'}</small>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  const renderAccDeps = () => {
+    const container = document.querySelector('#accHistoryContent')
+    if (!deposits.length) {
+      container.innerHTML = '<p style="text-align:center; color:#64748b; padding:15px; font-size:12px;">No deposit records found.</p>'
+      return
+    }
+    container.innerHTML = deposits.map(d => `
+      <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid ${d.status === 'Completed' ? '#22c55e' : '#facc15'}; font-size: 12px;">
+        <div style="display: flex; justify-content: space-between;">
+          <strong style="color: #fff;">₹${d.amount}</strong>
+          <span style="color: ${d.status === 'Completed' ? '#22c55e' : '#facc15'}; font-weight: bold;">${d.status}</span>
+        </div>
+        <div style="color: #94a3b8; margin: 2px 0;">UTR: ${escapeHtml(d.utr)}</div>
+        <small style="color: #64748b;">${d.date}</small>
+      </div>
+    `).join('')
+  }
+
+  const renderAccWds = () => {
+    const container = document.querySelector('#accHistoryContent')
+    if (!withdrawals.length) {
+      container.innerHTML = '<p style="text-align:center; color:#64748b; padding:15px; font-size:12px;">No withdrawal records found.</p>'
+      return
+    }
+    container.innerHTML = withdrawals.map(w => `
+      <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid ${w.status === 'Completed' ? '#22c55e' : w.status === 'Rejected' ? '#ef4444' : '#facc15'}; font-size: 12px;">
+        <div style="display: flex; justify-content: space-between;">
+          <strong style="color: #fff;">₹${w.amount}</strong>
+          <span style="color: ${w.status === 'Completed' ? '#22c55e' : w.status === 'Rejected' ? '#ef4444' : '#facc15'}; font-weight: bold;">${w.status}</span>
+        </div>
+        <div style="color: #94a3b8; margin: 2px 0;">UPI: ${escapeHtml(w.upi)}</div>
+        <small style="color: #64748b;">${w.date}</small>
+      </div>
+    `).join('')
+  }
+
+  renderAccBets()
+
+  document.querySelector('#tabBetHistory').onclick = (e) => {
+    document.querySelectorAll('.acc-tab-btn').forEach(b => { b.style.background = 'transparent'; b.style.color = '#94a3b8'; })
+    e.target.style.background = '#2563eb'
+    e.target.style.color = '#fff'
+    renderAccBets()
+  }
+
+  document.querySelector('#tabDepHistory').onclick = (e) => {
+    document.querySelectorAll('.acc-tab-btn').forEach(b => { b.style.background = 'transparent'; b.style.color = '#94a3b8'; })
+    e.target.style.background = '#2563eb'
+    e.target.style.color = '#fff'
+    renderAccDeps()
+  }
+
+  document.querySelector('#tabWdHistory').onclick = (e) => {
+    document.querySelectorAll('.acc-tab-btn').forEach(b => { b.style.background = 'transparent'; b.style.color = '#94a3b8'; })
+    e.target.style.background = '#2563eb'
+    e.target.style.color = '#fff'
+    renderAccWds()
+  }
+
+  document.querySelector('#supportAccountBtn').onclick = openCustomerService
   document.querySelector('#logoutBtn').onclick = () => {
     logoutUser()
     showLogin()
@@ -1717,11 +1967,18 @@ window.approveDep = function(id) {
   dep.status = 'Completed'
   localStorage.setItem('kivoro_deposits', JSON.stringify(deposits))
 
-  const users = getAllUsers()
-  const user = users.find(u => u.id === dep.uid)
-  if (user) {
-    user.balance = Number(user.balance || 0) + Number(dep.amount) + Number(dep.bonus)
-    saveAllUsers(users)
+  try {
+    const rawUsers = localStorage.getItem('kivoro_users')
+    if (rawUsers) {
+      const users = JSON.parse(rawUsers)
+      const targetUser = users.find(u => String(u.id) === String(dep.uid))
+      if (targetUser) {
+        targetUser.balance = Number(targetUser.balance || 0) + Number(dep.amount) + Number(dep.bonus)
+        localStorage.setItem('kivoro_users', JSON.stringify(users))
+      }
+    }
+  } catch (e) {
+    console.error(e)
   }
 
   showToast('Deposit approved and balance credited!', 'success')
