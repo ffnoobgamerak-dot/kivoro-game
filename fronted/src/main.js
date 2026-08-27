@@ -159,7 +159,7 @@ function showDepositPromptModal() {
   modal.className = 'deposit-prompt-modal'
   modal.style.cssText = `
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
     display: grid; place-items: center; z-index: 999999;
   `
   modal.innerHTML = `
@@ -167,7 +167,7 @@ function showDepositPromptModal() {
       <div style="font-size: 50px; margin-bottom: 8px;">⚠️</div>
       <h3 style="color: #00d26a; margin-bottom: 6px; font-size: 19px; font-weight: 800;">Recharge Required</h3>
       <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 20px;">
-        Game play karne ke liye wallet me minimum <strong>₹100</strong> hona zaroori hai. Kripya pehle recharge karein.
+        Game me play karne ke liye minimum <strong>₹100</strong> ka deposit zaroori hai. Kripya pehle recharge karein.
       </p>
       <div style="display: flex; gap: 10px;">
         <button id="cancelPromptBtn" style="flex: 1; padding: 10px; background: #e2e8f0; border: none; border-radius: 8px; color: #475569; font-weight: bold; cursor: pointer;">Cancel</button>
@@ -188,7 +188,7 @@ function showDepositPromptModal() {
 }
 
 /* =========================
-   OFFICIAL PAYMENT GATEWAY (New Tab Window)
+   KIVORO SECURE PAYMENT GATEWAY (New Window)
 ========================= */
 
 function openDepositGateway(amount, channel = 'UPI Express Pay') {
@@ -201,7 +201,7 @@ function openDepositGateway(amount, channel = 'UPI Express Pay') {
   const bonus = Math.floor(amount * 0.10)
   const orderId = 'ORD-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000)
   const upiId = 'ayush122312@ybl'
-  const upiPayUrl = `upi://pay?pa=${upiId}&pn=YaarWinOfficial&am=${amount}&cu=INR&tn=Deposit_${orderId}`
+  const upiPayUrl = `upi://pay?pa=${upiId}&pn=KivoroPlay&am=${amount}&cu=INR&tn=Deposit_${orderId}`
 
   const gatewayHtml = `
     <!DOCTYPE html>
@@ -209,7 +209,7 @@ function openDepositGateway(amount, channel = 'UPI Express Pay') {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Payment Gateway - Yaar Win</title>
+      <title>Payment Gateway - Kivoro Play</title>
       <style>
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
         body { background:#f1f5f9; display:flex; justify-content:center; padding:15px; color:#1e293b; }
@@ -228,7 +228,7 @@ function openDepositGateway(amount, channel = 'UPI Express Pay') {
     <body>
       <div class="pay-box">
         <div class="header">
-          <h2 style="color:#00d26a; font-weight:900;">👑 Yaar Win Official Gateway</h2>
+          <h2 style="color:#00d26a; font-weight:900;">👑 Kivoro Official Gateway</h2>
           <small style="color:#64748b;">Order: ${orderId} | Channel: ${channel}</small><br>
           <span class="timer-badge">⏳ Payment Expires in: <span id="payTimer">10:00</span></span>
         </div>
@@ -372,7 +372,8 @@ function showAuthTab(type = 'login') {
   app().innerHTML = `
     <div style="min-height:100vh; background:#f8fafc; display:flex; flex-direction:column; justify-content:center; padding:20px;">
       <div style="text-align:center; margin-bottom:25px;">
-        <h1 style="color:#00d26a; font-size:32px; font-weight:900; letter-spacing:0.5px;">Yaar Win</h1>
+        <div style="font-size:40px; margin-bottom:4px;">👑</div>
+        <h1 style="color:#00d26a; font-size:32px; font-weight:900; letter-spacing:0.5px;">KIVORO CLUB</h1>
         <p style="color:#64748b; font-size:13px;">Official Fair Gaming & Lottery Platform</p>
       </div>
 
@@ -454,7 +455,7 @@ function showLogin() { showAuthTab('login') }
 function showRegister() { showAuthTab('register') }
 
 /* =========================
-   HOME SCREEN (YaarWin Exact UI)
+   HOME SCREEN
 ========================= */
 
 function showHome() {
@@ -472,7 +473,7 @@ function showHome() {
     <div class="app-shell">
       <div class="yw-header">
         <div class="yw-top-row">
-          <span class="yw-logo">Yaar Win</span>
+          <span class="yw-logo">👑 Kivoro Club</span>
           <div style="display:flex; gap:10px;">
             <button id="homeSupportBtn" style="background:none; border:none; font-size:20px; cursor:pointer;">🎧</button>
           </div>
@@ -605,7 +606,7 @@ function startLiveWinnerTicker() {
 }
 
 /* =========================
-   WINGO SCREEN (0-9 Circular Number Balls & Bet Engine)
+   WINGO SCREEN (Circular Balls + Live Bet & History Tabs)
 ========================= */
 
 function showWingo() {
@@ -618,7 +619,7 @@ function showWingo() {
         <div class="yw-top-row">
           <button id="backBtn" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">←</button>
           <span class="yw-logo">${getModeName()}</span>
-          <span>🎧</span>
+          <span style="font-weight:bold;">₹<span id="topBalanceDisplay">${getBalance().toLocaleString()}</span></span>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.15); padding:8px 12px; border-radius:10px;">
           <div>
@@ -693,19 +694,13 @@ function showWingo() {
         </div>
       </div>
 
+      <!-- Wingo History Tabs (Game History vs My History) -->
       <div class="yw-normal-card">
-        <h4 style="margin-bottom:8px;">Game Record History</h4>
-        <table class="yw-history-table">
-          <thead>
-            <tr>
-              <th>Period</th>
-              <th>Number</th>
-              <th>Big/Small</th>
-              <th>Color</th>
-            </tr>
-          </thead>
-          <tbody id="wingoHistoryBody"></tbody>
-        </table>
+        <div class="wingo-tabs">
+          <button id="tabGameHistory" class="w-tab-btn active">Game History</button>
+          <button id="tabMyHistory" class="w-tab-btn">My History</button>
+        </div>
+        <div id="wingoTabContent"></div>
       </div>
     </div>
   `
@@ -747,7 +742,7 @@ function showWingo() {
     }
   })
 
-  // Amount buttons
+  // Amount selection
   document.querySelectorAll('[data-amount]').forEach(button => {
     button.onclick = () => {
       selectedAmount = Number(button.dataset.amount)
@@ -784,8 +779,21 @@ function showWingo() {
 
   document.querySelector('#lockPredictionBtn').onclick = lockPrediction
 
+  // Tabs switching
+  document.querySelector('#tabGameHistory').onclick = (e) => {
+    document.querySelectorAll('.w-tab-btn').forEach(b => b.classList.remove('active'))
+    e.target.classList.add('active')
+    renderWingoGameHistory()
+  }
+
+  document.querySelector('#tabMyHistory').onclick = (e) => {
+    document.querySelectorAll('.w-tab-btn').forEach(b => b.classList.remove('active'))
+    e.target.classList.add('active')
+    renderWingoMyHistory()
+  }
+
   updateSelection()
-  renderWingoHistory()
+  renderWingoGameHistory()
 
   wingoInterval = setInterval(() => {
     if (currentPage !== 'wingo') return
@@ -835,8 +843,25 @@ function lockPrediction() {
   lockedPrediction = {
     choice: selectedChoice,
     amount: totalBet,
-    period: period
+    period: period,
+    mode: currentModeKey
   }
+
+  // Active bets register for admin live view
+  const user = getCurrentUser()
+  try {
+    const activeBets = JSON.parse(localStorage.getItem('kivoro_active_bets') || '[]')
+    activeBets.unshift({
+      uid: user.id,
+      name: user.name,
+      period: period,
+      mode: currentModeKey,
+      choice: selectedChoice,
+      amount: totalBet,
+      time: new Date().toLocaleTimeString()
+    })
+    localStorage.setItem('kivoro_active_bets', JSON.stringify(activeBets.slice(0, 50)))
+  } catch (e) {}
 
   const btn = document.querySelector('#lockPredictionBtn')
   if (btn) {
@@ -845,14 +870,21 @@ function lockPrediction() {
     btn.style.background = '#94a3b8'
   }
 
+  const topBal = document.querySelector('#topBalanceDisplay')
+  if (topBal) topBal.textContent = getBalance().toLocaleString()
+
   showToast(`Bet of ₹${totalBet} locked on ${selectedChoice}!`, 'success')
+  renderWingoMyHistory()
 }
 
 function finishRound() {
   const adminState = getAdminState()
   let number
 
-  let forced = adminState.modeForcedResults?.[currentModeKey] || adminState.forcedResult
+  let forced = adminState.modeForcedResults?.[currentModeKey]
+  if (forced === null || forced === undefined || forced === '') {
+    forced = adminState.forcedResult
+  }
 
   if (forced !== null && forced !== undefined && forced !== '') {
     const fStr = String(forced).toUpperCase()
@@ -897,7 +929,10 @@ function finishRound() {
       matched = true
       let multiplier = 2
       if (!isNaN(lockedPrediction.choice)) multiplier = 9
-      winAmount = lockedPrediction.amount * multiplier
+      
+      // 2% Platform Fee/Tax Deduction (98% Pay)
+      const grossWin = lockedPrediction.amount * multiplier
+      winAmount = Math.floor(grossWin * 0.98)
       setBalance(getBalance() + winAmount)
     }
 
@@ -939,23 +974,88 @@ function finishRound() {
       btn.style.background = '#00d26a'
     }
 
+    const topBal = document.querySelector('#topBalanceDisplay')
+    if (topBal) topBal.textContent = getBalance().toLocaleString()
+
     document.querySelectorAll('[data-choice]').forEach(item => item.classList.remove('selected'))
     updateSelection()
-    renderWingoHistory()
+
+    if (document.querySelector('#tabGameHistory')?.classList.contains('active')) {
+      renderWingoGameHistory()
+    } else {
+      renderWingoMyHistory()
+    }
   }
 }
 
-function renderWingoHistory() {
-  const tbody = document.querySelector('#wingoHistoryBody')
-  if (!tbody) return
-  tbody.innerHTML = history.slice(0, 10).map(h => `
-    <tr>
-      <td style="color:#64748b;">${h.period}</td>
-      <td style="font-weight:900; color:${h.color === 'GREEN' ? '#00d26a' : '#ef4444'};">${h.number}</td>
-      <td>${h.size}</td>
-      <td><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${h.color === 'GREEN' ? '#00d26a' : h.color === 'VIOLET' ? '#a855f7' : '#ef4444'};"></span></td>
-    </tr>
+function renderWingoGameHistory() {
+  const container = document.querySelector('#wingoTabContent')
+  if (!container) return
+  container.innerHTML = `
+    <table class="yw-history-table">
+      <thead>
+        <tr>
+          <th>Period</th>
+          <th>Number</th>
+          <th>Big/Small</th>
+          <th>Color</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${history.slice(0, 10).map(h => `
+          <tr>
+            <td style="color:#64748b;">${h.period}</td>
+            <td style="font-weight:900; color:${h.color === 'GREEN' ? '#00d26a' : '#ef4444'};">${h.number}</td>
+            <td>${h.size}</td>
+            <td><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${h.color === 'GREEN' ? '#00d26a' : h.color === 'VIOLET' ? '#a855f7' : '#ef4444'};"></span></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `
+}
+
+function renderWingoMyHistory() {
+  const container = document.querySelector('#wingoTabContent')
+  if (!container) return
+  const user = getCurrentUser()
+  const bets = user ? getUserBetRecords(user.id) : []
+
+  if (!bets.length && !lockedPrediction) {
+    container.innerHTML = '<p style="text-align:center; color:#64748b; padding:15px; font-size:12px;">No bets yet on this mode.</p>'
+    return
+  }
+
+  let html = ''
+  if (lockedPrediction) {
+    html += `
+      <div style="background:#f0fdf4; padding:10px; border-radius:8px; margin-bottom:8px; border-left:3px solid #f59e0b; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>#${lockedPrediction.period} (Current)</strong><br>
+          <span style="color:#64748b;">Choice: <strong>${lockedPrediction.choice}</strong> | Bet: ₹${lockedPrediction.amount}</span>
+        </div>
+        <div style="text-align:right;">
+          <span style="background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pending...</span>
+        </div>
+      </div>
+    `
+  }
+
+  html += bets.slice(0, 10).map(b => `
+    <div style="background:#f8fafc; padding:10px; border-radius:8px; margin-bottom:6px; border-left:3px solid ${b.result === 'WIN' ? '#00d26a' : '#ef4444'}; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <strong style="color:#1e293b;">${b.game}</strong> (#${b.period || '—'})<br>
+        <span style="color:#64748b;">Choice: <strong>${b.choice}</strong> | Bet: ₹${b.bet}</span><br>
+        <small style="color:#94a3b8;">${b.date}</small>
+      </div>
+      <div style="text-align:right;">
+        <span style="color:${b.result === 'WIN' ? '#00d26a' : '#ef4444'}; font-weight:bold; font-size:13px;">${b.result}</span><br>
+        <small style="color:#475569; font-weight:bold;">${b.payout ? '+₹' + b.payout : '₹0'}</small>
+      </div>
+    </div>
   `).join('')
+
+  container.innerHTML = html
 }
 
 function showResultPopup(won, result, payout) {
@@ -965,24 +1065,24 @@ function showResultPopup(won, result, payout) {
   popup.className = 'result-popup'
   popup.style.cssText = `
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: grid; place-items:center; z-index:99999;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: grid; place-items:center; z-index:999999;
   `
   popup.innerHTML = `
     <div style="background:#fff; border-radius:20px; padding:30px; text-align:center; width:90%; max-width:320px; color:#1e293b; box-shadow:0 20px 40px rgba(0,0,0,0.3);">
       <div style="font-size:65px; margin-bottom:10px;">${won ? '🎉' : '🎯'}</div>
-      <h2 style="color:${won ? '#00d26a' : '#ef4444'}; font-size:24px; font-weight:900; margin-bottom:10px;">${won ? 'WIN' : 'LOSS'}</h2>
+      <h2 style="color:${won ? '#00d26a' : '#ef4444'}; font-size:24px; font-weight:900; margin-bottom:10px;">${won ? 'CONGRATULATIONS!' : 'GAME OVER'}</h2>
       <div style="font-size:42px; font-weight:900; margin:10px 0; background:#f1f5f9; padding:10px; border-radius:12px; color:#00d26a;">
         ${result.number}
       </div>
       <p style="color:#64748b; font-weight:bold; margin-bottom:15px;">${result.color} • ${result.size}</p>
-      ${won ? `<p style="color:#00d26a; font-weight:bold; font-size:18px; margin-bottom:15px;">+₹${payout} Won</p>` : ''}
+      ${won ? `<p style="color:#00d26a; font-weight:bold; font-size:18px; margin-bottom:15px; background:#f0fdf4; padding:8px; border-radius:8px;">+₹${payout} Won (Tax Included)</p>` : '<p style="color:#ef4444; font-weight:bold; margin-bottom:15px;">Try Again In Next Round</p>'}
       <button id="closeResultPopup" style="width:100%; padding:12px; background:#00d26a; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Continue</button>
     </div>
   `
 
   document.body.appendChild(popup)
   document.querySelector('#closeResultPopup').onclick = () => popup.remove()
-  setTimeout(() => popup.remove(), 4000)
+  setTimeout(() => popup.remove(), 4500)
 }
 
 /* =========================
@@ -1303,7 +1403,7 @@ function saveAviatorHistory(list) {
 }
 
 /* =========================
-   ACCOUNT & PROFILE (91 Club Style UID & History)
+   ACCOUNT & PROFILE (Direct Navigation to Records)
 ========================= */
 
 function showAccount() {
@@ -1327,7 +1427,7 @@ function showAccount() {
               <span>UID | ${escapeHtml(user.id)}</span>
               <button id="accCopyUid" style="background:none; border:none; color:#fff; cursor:pointer;">📋</button>
             </div>
-            <small style="opacity:0.8; font-size:11px;">Last login: ${new Date().toLocaleDateString()}</small>
+            <small style="opacity:0.8; font-size:11px;">Phone: +91 ${escapeHtml(user.phone)}</small>
           </div>
         </div>
       </div>
@@ -1347,6 +1447,7 @@ function showAccount() {
         </div>
       </div>
 
+      <!-- 4 Quick History Tiles -->
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 12px;">
         <div id="btnGameHist" class="yw-normal-card" style="margin:0; cursor:pointer;">
           <strong style="color:#3b82f6;">📊 Game History</strong><br>
@@ -1354,21 +1455,21 @@ function showAccount() {
         </div>
         <div id="btnTxnHist" class="yw-normal-card" style="margin:0; cursor:pointer;">
           <strong style="color:#10b981;">📋 Transaction</strong><br>
-          <small style="color:#64748b;">My transaction history</small>
+          <small style="color:#64748b;">All transactions</small>
         </div>
         <div id="btnDepHist" class="yw-normal-card" style="margin:0; cursor:pointer;">
-          <strong style="color:#ef4444;">📥 Deposit</strong><br>
-          <small style="color:#64748b;">My deposit history</small>
+          <strong style="color:#ef4444;">📥 Deposit History</strong><br>
+          <small style="color:#64748b;">My deposits</small>
         </div>
         <div id="btnWdHist" class="yw-normal-card" style="margin:0; cursor:pointer;">
-          <strong style="color:#f59e0b;">📤 Withdraw</strong><br>
-          <small style="color:#64748b;">My withdraw history</small>
+          <strong style="color:#f59e0b;">📤 Withdraw History</strong><br>
+          <small style="color:#64748b;">My withdrawals</small>
         </div>
       </div>
 
       <div class="yw-normal-card" style="display:flex; justify-content:space-between; align-items:center;">
         <span>🔔 Notification</span>
-        <span style="background:#ef4444; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px;">25</span>
+        <span style="background:#ef4444; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px;">Official Kivoro</span>
       </div>
 
       <div style="margin:16px 12px;">
@@ -1389,9 +1490,24 @@ function showAccount() {
   document.querySelector('#accWdBtn').onclick = showWallet
 
   document.querySelector('#btnGameHist').onclick = showMyBetHistory
-  document.querySelector('#btnTxnHist').onclick = showWallet
-  document.querySelector('#btnDepHist').onclick = showWallet
-  document.querySelector('#btnWdHist').onclick = showWallet
+  document.querySelector('#btnTxnHist').onclick = () => {
+    showWallet()
+    setTimeout(() => { document.querySelector('#historyBtn')?.click() }, 100)
+  }
+  document.querySelector('#btnDepHist').onclick = () => {
+    showWallet()
+    setTimeout(() => {
+      document.querySelector('#historyBtn')?.click()
+      setTimeout(() => { document.querySelector('#histDepBtn')?.click() }, 100)
+    }, 100)
+  }
+  document.querySelector('#btnWdHist').onclick = () => {
+    showWallet()
+    setTimeout(() => {
+      document.querySelector('#historyBtn')?.click()
+      setTimeout(() => { document.querySelector('#histWdBtn')?.click() }, 100)
+    }, 100)
+  }
 
   document.querySelector('#logoutBtn').onclick = () => {
     logoutUser()
@@ -1412,13 +1528,13 @@ function showMyBetHistory() {
       <div class="yw-header">
         <div class="yw-top-row">
           <button id="histBackBtn" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">←</button>
-          <span class="yw-logo">Yaar Win</span>
+          <span class="yw-logo">👑 Kivoro Bets</span>
           <span></span>
         </div>
       </div>
 
       <div style="padding:10px 12px;">
-        <h3 style="margin-bottom:10px;">My Bet History</h3>
+        <h3 style="margin-bottom:10px;">My Game Bet History</h3>
         ${bets.length === 0 ? '<p style="text-align:center; color:#64748b; margin-top:30px;">No bets placed yet.</p>' : bets.map(b => `
           <div class="yw-normal-card" style="margin:0 0 10px 0; display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -1426,12 +1542,12 @@ function showMyBetHistory() {
                 ${b.choice}
               </div>
               <div>
-                <strong style="font-size:13px;">#${b.period || 'Round'}</strong><br>
+                <strong style="font-size:13px;">${b.game} (#${b.period || 'Round'})</strong><br>
                 <small style="color:#64748b;">${b.date}</small>
               </div>
             </div>
             <div style="text-align:right;">
-              <span style="color:#00d26a; font-size:11px; font-weight:bold; border:1px solid #00d26a; padding:1px 6px; border-radius:4px;">${b.result}</span><br>
+              <span style="color:${b.result === 'WIN' ? '#00d26a' : '#ef4444'}; font-size:11px; font-weight:bold; border:1px solid ${b.result === 'WIN' ? '#00d26a' : '#ef4444'}; padding:1px 6px; border-radius:4px;">${b.result}</span><br>
               <strong style="color:${b.result === 'WIN' ? '#00d26a' : '#64748b'}; font-size:13px;">${b.payout ? '+₹' + b.payout : '₹0.00'}</strong>
             </div>
           </div>
@@ -1461,7 +1577,7 @@ function showPromotion() {
   app().innerHTML = `
     <div class="app-shell">
       <div class="yw-header" style="text-align:center;">
-        <h2 style="font-size:18px;">Agency</h2>
+        <h2 style="font-size:18px;">Agency Center</h2>
         <div style="margin-top:15px;">
           <h1 style="font-size:36px; font-weight:900;">₹${commissionEarned.toFixed(2)}</h1>
           <span style="background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:12px;">Yesterday's total commission</span>
@@ -1585,7 +1701,7 @@ function showWallet() {
       <p style="font-size:12px; color:#64748b; margin-bottom:8px;">Choose instant payment gateway or select channel below:</p>
       
       <button id="open91GatewayBtn" class="main-btn" style="background: linear-gradient(135deg, #00d26a, #047857); padding: 12px; margin-bottom: 12px; font-size: 14px; font-weight: 800;">
-        ⚡ Open Yaar Win Payment Gateway (New Tab)
+        ⚡ Open Kivoro Official Payment Gateway (New Tab)
       </button>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
@@ -1717,7 +1833,7 @@ function showWallet() {
         return
       }
       container.innerHTML = withdrawals.map(w => `
-        <div style="background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:6px; border-left:3px solid ${w.status === 'Completed' ? '#00d26a' : w.status === 'Rejected' ? '#ef4444' : '#f59e0b'};">
+        <div style="background:#f8fafc; padding:8px; margin-bottom:6px; border-radius:6px; border-left:3px solid ${w.status === 'Completed' ? '#00d26a' : w.status === 'Rejected' ? '#ef4444' : '#f59e0b'};">
           <strong>₹${w.amount}</strong> via UPI (${escapeHtml(w.upi)})<br>
           <span style="color:#64748b;">Status: <strong>${w.status}</strong></span><br>
           <small style="color:#94a3b8;">${w.date || w.createdAt}</small>
@@ -1786,8 +1902,21 @@ function showActivity() {
   connectNavigation()
 }
 
+function renderHistory() {
+  const box = document.querySelector('#history')
+  if (!box) return
+  box.innerHTML = history.slice(0, 15).map(round => `
+    <div class="history-row" style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #e2e8f0; font-size:12px;">
+      <span>#${round.period}</span>
+      <strong style="color:${round.color === 'GREEN' ? '#00d26a' : '#ef4444'};">${round.number}</strong>
+      <span>${round.color}</span>
+      <span>${round.size}</span>
+    </div>
+  `).join('')
+}
+
 /* =========================
-   FULL ADMIN PANEL (All Modes Connected)
+   FULL ADMIN PANEL (Live Bets & 100% Win/Loss Control)
 ========================= */
 
 function showAdmin() {
@@ -1804,11 +1933,11 @@ function showAdmin() {
   app().innerHTML = `
     <div class="admin-layout">
       <aside class="admin-menu">
-        <h2>Yaar Win Admin</h2>
+        <h2>👑 Kivoro Admin</h2>
         <button id="aDashboard">📊 Dashboard</button>
+        <button id="aControl">🎯 Win/Loss Control & Live Bets</button>
         <button id="aWithdrawals">💳 Withdrawals</button>
         <button id="aDeposits">➕ Deposit Approvals</button>
-        <button id="aControl">🎯 Win/Loss Control</button>
         <button id="aDemoId">🪪 Create Demo ID</button>
         <button id="aPlayers">👥 Players</button>
         <button id="aAgents">👔 Agents</button>
@@ -1824,9 +1953,9 @@ function showAdmin() {
   `
 
   document.querySelector('#aDashboard').onclick = adminDashboard
+  document.querySelector('#aControl').onclick = adminWinLossControl
   document.querySelector('#aWithdrawals').onclick = adminWithdrawalsPanel
   document.querySelector('#aDeposits').onclick = adminDepositsPanel
-  document.querySelector('#aControl').onclick = adminWinLossControl
   document.querySelector('#aDemoId').onclick = adminDemoId
   document.querySelector('#aPlayers').onclick = adminPlayers
   document.querySelector('#aAgents').onclick = adminAgents
@@ -1850,7 +1979,7 @@ function adminDashboard() {
   const pendingDep = deposits.filter(d => d.status === 'Pending').length
 
   document.querySelector('#adminContent').innerHTML = `
-    <h1>Admin Dashboard</h1>
+    <h1>Kivoro Admin Dashboard</h1>
     <div class="admin-stats">
       <div><span>Total Players</span><strong>${users.length}</strong></div>
       <div><span>Pending Withdrawals</span><strong style="color:#facc15;">${pendingWd}</strong></div>
@@ -1865,22 +1994,22 @@ function adminWithdrawalsPanel() {
   document.querySelector('#adminContent').innerHTML = `
     <h1>Withdrawal Control Panel</h1>
     <div style="margin-top:15px;">
-      ${withdrawals.length === 0 ? '<p>No withdrawal requests found.</p>' : withdrawals.map(w => `
-        <section class="yw-normal-card" style="margin-bottom:12px; border-left:4px solid ${w.status === 'Completed' ? '#00d26a' : w.status === 'Rejected' ? '#ef4444' : '#facc15'};">
+      ${withdrawals.length === 0 ? '<p style="color:#94a3b8;">No withdrawal requests found.</p>' : withdrawals.map(w => `
+        <section style="background:#1e293b; padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid ${w.status === 'Completed' ? '#00d26a' : w.status === 'Rejected' ? '#ef4444' : '#facc15'};">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <strong>ID: ${w.id}</strong> (User: ${w.uid})<br>
-              Amount: <strong style="color:#00d26a;">₹${w.amount}</strong> | UPI: <strong>${escapeHtml(w.upi)}</strong><br>
-              <small style="color:#64748b;">Date: ${w.date || w.createdAt}</small>
+              Amount: <strong style="color:#00d26a; font-size:16px;">₹${w.amount}</strong> | UPI: <strong>${escapeHtml(w.upi)}</strong><br>
+              <small style="color:#94a3b8;">Date: ${w.date || w.createdAt}</small>
             </div>
             <div>
-              <span style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold; background:${w.status === 'Completed' ? '#065f46' : w.status === 'Rejected' ? '#991b1b' : '#854d0e'}; color:#fff;">${w.status}</span>
+              <span style="padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold; background:${w.status === 'Completed' ? '#065f46' : w.status === 'Rejected' ? '#991b1b' : '#854d0e'}; color:#fff;">${w.status}</span>
             </div>
           </div>
-          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="main-btn" style="padding:6px 12px; font-size:12px; background:#f59e0b; width:auto;" onclick="window.updateWd('${w.id}', 'Processing')">Mark Processing</button>
-            <button class="main-btn" style="padding:6px 12px; font-size:12px; background:#00d26a; width:auto;" onclick="window.updateWd('${w.id}', 'Completed')">Mark Completed</button>
-            <button class="main-btn" style="padding:6px 12px; font-size:12px; background:#ef4444; width:auto;" onclick="window.updateWd('${w.id}', 'Rejected')">Reject & Auto-Refund</button>
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="main-btn" style="padding:6px 14px; font-size:12px; background:#f59e0b; width:auto;" onclick="window.updateWd('${w.id}', 'Processing')">Mark Processing</button>
+            <button class="main-btn" style="padding:6px 14px; font-size:12px; background:#00d26a; width:auto;" onclick="window.updateWd('${w.id}', 'Completed')">Mark Completed</button>
+            <button class="main-btn" style="padding:6px 14px; font-size:12px; background:#ef4444; width:auto;" onclick="window.updateWd('${w.id}', 'Rejected')">Reject & Auto-Refund</button>
           </div>
         </section>
       `).join('')}
@@ -1903,17 +2032,17 @@ function adminDepositsPanel() {
   document.querySelector('#adminContent').innerHTML = `
     <h1>Deposit Approvals</h1>
     <div style="margin-top:15px;">
-      ${deposits.length === 0 ? '<p>No deposit requests found.</p>' : deposits.map(d => `
-        <section class="yw-normal-card" style="margin-bottom:12px; border-left:4px solid ${d.status === 'Completed' ? '#00d26a' : '#facc15'};">
+      ${deposits.length === 0 ? '<p style="color:#94a3b8;">No deposit requests found.</p>' : deposits.map(d => `
+        <section style="background:#1e293b; padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid ${d.status === 'Completed' ? '#00d26a' : '#facc15'};">
           <div>
             <strong>ID: ${d.id}</strong> (User: ${d.uid} - ${escapeHtml(d.name || '')})<br>
-            Amount: <strong style="color:#00d26a;">₹${d.amount}</strong> (+₹${d.bonus || 0} Bonus) | UTR: <strong>${escapeHtml(d.utr)}</strong><br>
-            <small style="color:#64748b;">Date: ${d.date || d.createdAt} | Status: <strong>${d.status}</strong></small>
+            Amount: <strong style="color:#00d26a; font-size:16px;">₹${d.amount}</strong> (+₹${d.bonus || 0} Bonus) | UTR: <strong>${escapeHtml(d.utr)}</strong><br>
+            <small style="color:#94a3b8;">Date: ${d.date || d.createdAt} | Status: <strong>${d.status}</strong></small>
           </div>
           ${d.status === 'Pending' ? `
-            <div style="margin-top:10px; display:flex; gap:8px;">
-              <button class="main-btn" style="background:#00d26a; padding:6px 12px; font-size:12px; width:auto;" onclick="window.approveDep('${d.id}', 'Completed')">Approve & Add Balance</button>
-              <button class="main-btn" style="background:#ef4444; padding:6px 12px; font-size:12px; width:auto;" onclick="window.approveDep('${d.id}', 'Rejected')">Reject Deposit</button>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+              <button class="main-btn" style="background:#00d26a; padding:8px 16px; font-size:12px; width:auto;" onclick="window.approveDep('${d.id}', 'Completed')">Approve & Credit Balance</button>
+              <button class="main-btn" style="background:#ef4444; padding:8px 16px; font-size:12px; width:auto;" onclick="window.approveDep('${d.id}', 'Rejected')">Reject Deposit</button>
             </div>
           ` : ''}
         </section>
@@ -1932,8 +2061,13 @@ window.approveDep = function(id, status) {
   }
 }
 
+// 🎯 LIVE PLAYER BETS TRACKER & FORCED WIN/LOSS CONTROL
 function adminWinLossControl() {
   const state = getAdminState()
+  let activeBets = []
+  try {
+    activeBets = JSON.parse(localStorage.getItem('kivoro_active_bets') || '[]')
+  } catch (e) {}
 
   function getOptionsHtml(curVal) {
     let opts = `
@@ -1951,42 +2085,78 @@ function adminWinLossControl() {
   }
 
   document.querySelector('#adminContent').innerHTML = `
-    <h1>All Games Win / Loss Control</h1>
+    <h1>Game Win / Loss & Live Bets Control</h1>
     
-    <section class="yw-normal-card" style="margin-bottom:15px;">
-      <h3 style="color:#00d26a;">🎯 Wingo 30 Sec Control</h3>
-      <select id="ctrlWingo30" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-top:5px;">
-        ${getOptionsHtml(state.modeForcedResults?.wingo30)}
-      </select>
+    <!-- Live Bets Placed by Users -->
+    <section style="background:#1e293b; padding:18px; border-radius:12px; margin-bottom:20px; border:1px solid #334155;">
+      <h3 style="color:#facc15; margin-bottom:8px;">🔥 Live Current Player Bets</h3>
+      <p style="font-size:12px; color:#94a3b8; margin-bottom:12px;">Players ne kis color/number par kitna paisa lagaya hai dekhein aur result set karein:</p>
+      
+      ${activeBets.length === 0 ? '<p style="color:#64748b; font-size:13px;">No active bets in the current round.</p>' : `
+        <div style="max-height:200px; overflow-y:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead>
+              <tr style="background:#0f172a; color:#00d26a; text-align:left;">
+                <th style="padding:8px;">User</th>
+                <th style="padding:8px;">Game</th>
+                <th style="padding:8px;">Choice</th>
+                <th style="padding:8px;">Amount</th>
+                <th style="padding:8px;">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${activeBets.slice(0, 15).map(b => `
+                <tr style="border-bottom:1px solid #334155;">
+                  <td style="padding:8px;">${escapeHtml(b.name)} (${b.uid})</td>
+                  <td style="padding:8px;">${b.mode}</td>
+                  <td style="padding:8px;"><strong style="color:#facc15;">${b.choice}</strong></td>
+                  <td style="padding:8px; color:#00d26a; font-weight:bold;">₹${b.amount}</td>
+                  <td style="padding:8px; color:#94a3b8;">${b.time}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
     </section>
 
-    <section class="yw-normal-card" style="margin-bottom:15px;">
-      <h3 style="color:#00d26a;">🎯 Wingo 1 Min Control</h3>
-      <select id="ctrlWingo60" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-top:5px;">
-        ${getOptionsHtml(state.modeForcedResults?.wingo60)}
-      </select>
+    <!-- All Modes Controls -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+      <section style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid #334155;">
+        <h3 style="color:#00d26a; font-size:15px;">⏱️ Wingo 30 Sec Control</h3>
+        <select id="ctrlWingo30" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155; margin-top:6px;">
+          ${getOptionsHtml(state.modeForcedResults?.wingo30)}
+        </select>
+      </section>
+
+      <section style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid #334155;">
+        <h3 style="color:#00d26a; font-size:15px;">⏱️ Wingo 1 Min Control</h3>
+        <select id="ctrlWingo60" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155; margin-top:6px;">
+          ${getOptionsHtml(state.modeForcedResults?.wingo60)}
+        </select>
+      </section>
+
+      <section style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid #334155;">
+        <h3 style="color:#00d26a; font-size:15px;">⏱️ Wingo 3 Min Control</h3>
+        <select id="ctrlWingo180" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155; margin-top:6px;">
+          ${getOptionsHtml(state.modeForcedResults?.wingo180)}
+        </select>
+      </section>
+
+      <section style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid #334155;">
+        <h3 style="color:#00d26a; font-size:15px;">⏱️ Wingo 5 Min Control</h3>
+        <select id="ctrlWingo300" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155; margin-top:6px;">
+          ${getOptionsHtml(state.modeForcedResults?.wingo300)}
+        </select>
+      </section>
+    </div>
+
+    <section style="background:#1e293b; padding:16px; border-radius:10px; border:1px solid #334155; margin-bottom:20px;">
+      <h3 style="color:#38bdf8; font-size:15px;">✈️ Aviator Crash Point Multiplier</h3>
+      <input id="ctrlAviator" type="number" step="0.1" placeholder="Force Crash At (e.g. 1.2, 5.0) Leave empty for Random" value="${state.modeForcedResults?.aviator || ''}" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155; margin-top:6px;">
     </section>
 
-    <section class="yw-normal-card" style="margin-bottom:15px;">
-      <h3 style="color:#00d26a;">🎯 Wingo 3 Min Control</h3>
-      <select id="ctrlWingo180" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-top:5px;">
-        ${getOptionsHtml(state.modeForcedResults?.wingo180)}
-      </select>
-    </section>
-
-    <section class="yw-normal-card" style="margin-bottom:15px;">
-      <h3 style="color:#00d26a;">🎯 Wingo 5 Min Control</h3>
-      <select id="ctrlWingo300" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-top:5px;">
-        ${getOptionsHtml(state.modeForcedResults?.wingo300)}
-      </select>
-    </section>
-
-    <section class="yw-normal-card" style="margin-bottom:15px;">
-      <h3 style="color:#3b82f6;">✈️ Aviator Crash Point Control</h3>
-      <input id="ctrlAviator" type="number" step="0.1" placeholder="Force Crash At (e.g. 1.2, 5.0) Leave empty for Random" value="${state.modeForcedResults?.aviator || ''}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-top:5px;">
-    </section>
-
-    <button id="saveAllModesBtn" class="main-btn" style="padding:14px; font-size:15px;">Save All Controls</button>
+    <button id="saveAllModesBtn" class="main-btn" style="padding:14px; font-size:16px; font-weight:bold; background:#00d26a;">Save All Win / Loss Controls</button>
   `
 
   document.querySelector('#saveAllModesBtn').onclick = () => {
@@ -2002,23 +2172,23 @@ function adminWinLossControl() {
     setModeForcedResult('wingo300', v300 === '' ? null : v300)
     setAviatorCrashPoint(av === '' ? null : av)
 
-    showToast('All Game Controls Saved Successfully!', 'success')
+    showToast('Win/Loss Controls Saved Successfully!', 'success')
   }
 }
 
 function adminDemoId() {
   document.querySelector('#adminContent').innerHTML = `
     <h1>Create Demo ID</h1>
-    <section class="yw-normal-card">
-      <input id="demoName" placeholder="Name" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px;">
-      <input id="demoPhone" maxlength="10" placeholder="Mobile number" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px;">
-      <input id="demoPassword" placeholder="Password" style="width:100%; padding:10px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px;">
-      <select id="demoRole" style="width:100%; padding:10px; margin-bottom:12px; border:1px solid #cbd5e1; border-radius:6px;">
+    <section style="background:#1e293b; padding:20px; border-radius:12px; max-width:450px;">
+      <input id="demoName" placeholder="Player Name" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
+      <input id="demoPhone" maxlength="10" placeholder="Mobile Number" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
+      <input id="demoPassword" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
+      <select id="demoRole" style="width:100%; padding:10px; margin-bottom:15px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
         <option value="USER">Player</option>
         <option value="AGENT">Agent</option>
       </select>
       <button id="createDemoBtn" class="main-btn">Create ID</button>
-      <p id="demoCreated" style="margin-top:10px; font-weight:bold; color:#00d26a;"></p>
+      <p id="demoCreated" style="margin-top:12px; font-weight:bold; color:#00d26a;"></p>
     </section>
   `
 
@@ -2047,24 +2217,26 @@ function adminPlayers() {
   const players = getAllUsers().filter(user => user.role === 'USER')
 
   document.querySelector('#adminContent').innerHTML = `
-    <h1>Players</h1>
-    ${
-      players.length
-        ? players
-            .map(
-              user => `
-                <section class="yw-normal-card">
-                  <h3>${escapeHtml(user.name)}</h3>
-                  <p>${escapeHtml(user.phone)}</p>
-                  <p>Balance: ₹${Number(user.balance || 0).toLocaleString()}</p>
-                  <input id="adjust-${user.id}" type="number" placeholder="Balance change" style="width:100%; padding:8px; margin:8px 0; border:1px solid #cbd5e1; border-radius:6px;">
-                  <button data-player="${user.id}" class="main-btn">Apply</button>
-                </section>
-              `
-            )
-            .join('')
-        : '<p>No players.</p>'
-    }
+    <h1>Players List & Balance Adjustment</h1>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-top:15px;">
+      ${
+        players.length
+          ? players
+              .map(
+                user => `
+                  <section style="background:#1e293b; padding:15px; border-radius:10px; border:1px solid #334155;">
+                    <h3 style="color:#00d26a;">${escapeHtml(user.name)}</h3>
+                    <p style="color:#cbd5e1; font-size:13px;">Phone: +91 ${escapeHtml(user.phone)}</p>
+                    <p style="color:#facc15; font-size:15px; font-weight:bold;">Balance: ₹${Number(user.balance || 0).toLocaleString()}</p>
+                    <input id="adjust-${user.id}" type="number" placeholder="Enter +/- amount" style="width:100%; padding:8px; margin:8px 0; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
+                    <button data-player="${user.id}" class="main-btn" style="padding:8px;">Apply Balance</button>
+                  </section>
+                `
+              )
+              .join('')
+          : '<p style="color:#94a3b8;">No players found.</p>'
+      }
+    </div>
   `
 
   document.querySelectorAll('[data-player]').forEach(button => {
@@ -2079,6 +2251,7 @@ function adminPlayers() {
         showToast(result.message, 'error')
         return
       }
+      showToast('Balance updated!', 'success')
       adminPlayers()
     }
   })
@@ -2088,24 +2261,26 @@ function adminAgents() {
   const agents = getAllUsers().filter(user => user.role === 'AGENT')
 
   document.querySelector('#adminContent').innerHTML = `
-    <h1>Agents</h1>
-    ${
-      agents.length
-        ? agents
-            .map(
-              agent => `
-                <section class="yw-normal-card">
-                  <h3>${escapeHtml(agent.name)}</h3>
-                  <p>${escapeHtml(agent.phone)}</p>
-                  <p>Balance: ₹${Number(agent.balance || 0).toLocaleString()}</p>
-                  <input id="salary-${agent.id}" type="number" placeholder="Salary coins" style="width:100%; padding:8px; margin:8px 0; border:1px solid #cbd5e1; border-radius:6px;">
-                  <button data-agent="${agent.id}" class="main-btn">Add Salary</button>
-                </section>
-              `
-            )
-            .join('')
-        : '<p>No agents.</p>'
-    }
+    <h1>Agents & Salaries</h1>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-top:15px;">
+      ${
+        agents.length
+          ? agents
+              .map(
+                agent => `
+                  <section style="background:#1e293b; padding:15px; border-radius:10px; border:1px solid #334155;">
+                    <h3 style="color:#38bdf8;">${escapeHtml(agent.name)}</h3>
+                    <p style="color:#cbd5e1; font-size:13px;">Phone: +91 ${escapeHtml(agent.phone)}</p>
+                    <p style="color:#facc15; font-size:15px; font-weight:bold;">Balance: ₹${Number(agent.balance || 0).toLocaleString()}</p>
+                    <input id="salary-${agent.id}" type="number" placeholder="Salary amount" style="width:100%; padding:8px; margin:8px 0; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
+                    <button data-agent="${agent.id}" class="main-btn" style="padding:8px; background:#38bdf8;">Add Salary</button>
+                  </section>
+                `
+              )
+              .join('')
+          : '<p style="color:#94a3b8;">No agents found.</p>'
+      }
+    </div>
   `
 
   document.querySelectorAll('[data-agent]').forEach(button => {
@@ -2120,6 +2295,7 @@ function adminAgents() {
         showToast(result.message, 'error')
         return
       }
+      showToast('Salary credited to agent!', 'success')
       adminAgents()
     }
   })
@@ -2133,28 +2309,28 @@ function adminGames() {
   ]
 
   document.querySelector('#adminContent').innerHTML = `
-    <h1>Game Control</h1>
-    ${games
-      .map(
-        game => `
-          <section class="yw-normal-card">
-            <h3>${game.name}</h3>
-            <label style="display:block; margin:6px 0;">
-              Enable Game
-              <input type="checkbox" data-enable="${game.key}" ${
-                state.games?.[game.key] !== false ? 'checked' : ''
-              }>
-            </label>
-            <label style="display:block; margin:6px 0;">
-              Lock Game
-              <input type="checkbox" data-lock="${game.key}" ${
-                state.lockedGames?.[game.key] === true ? 'checked' : ''
-              }>
-            </label>
-          </section>
-        `
-      )
-      .join('')}
+    <h1>Game Enable / Lock Controls</h1>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-top:15px;">
+      ${games
+        .map(
+          game => `
+            <section style="background:#1e293b; padding:15px; border-radius:10px; border:1px solid #334155;">
+              <h3 style="color:#00d26a;">${game.name}</h3>
+              <label style="display:block; margin:8px 0; font-size:13px;">
+                <input type="checkbox" data-enable="${game.key}" ${
+                  state.games?.[game.key] !== false ? 'checked' : ''
+                }> Enable Game
+              </label>
+              <label style="display:block; margin:8px 0; font-size:13px; color:#facc15;">
+                <input type="checkbox" data-lock="${game.key}" ${
+                  state.lockedGames?.[game.key] === true ? 'checked' : ''
+                }> Lock Game
+              </label>
+            </section>
+          `
+        )
+        .join('')}
+    </div>
   `
 
   document.querySelectorAll('[data-enable]').forEach(input => {
@@ -2174,31 +2350,32 @@ function adminGiftCodes() {
   const state = getAdminState()
 
   document.querySelector('#adminContent').innerHTML = `
-    <h1>Gift Codes</h1>
-    <section class="yw-normal-card">
-      <input id="giftAdminCode" placeholder="Gift code" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px;">
-      <input id="giftAdminCoins" type="number" placeholder="Coins" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px;">
-      <input id="giftAdminUses" type="number" placeholder="Maximum uses" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #cbd5e1; border-radius:6px;">
+    <h1>Gift Codes Manager</h1>
+    <section style="background:#1e293b; padding:18px; border-radius:10px; max-width:450px; margin-bottom:15px;">
+      <input id="giftAdminCode" placeholder="Gift Code (e.g. BONUS500)" style="width:100%; padding:10px; margin-bottom:8px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
+      <input id="giftAdminCoins" type="number" placeholder="Coins Amount" style="width:100%; padding:10px; margin-bottom:8px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
+      <input id="giftAdminUses" type="number" placeholder="Maximum Uses" style="width:100%; padding:10px; margin-bottom:12px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px;">
       <button id="createGiftBtn" class="main-btn">Create Gift Code</button>
     </section>
 
-    ${state.giftCodes
-      .map(
-        gift => `
-          <section class="yw-normal-card">
-            <strong>${escapeHtml(gift.code)}</strong>
-            <p>Reward: ${gift.coins} Coins</p>
-            <p>Used: ${gift.used} / ${gift.maxUses}</p>
-            <label>
-              Enabled
-              <input type="checkbox" data-gift="${gift.code}" ${
-                gift.enabled ? 'checked' : ''
-              }>
-            </label>
-          </section>
-        `
-      )
-      .join('')}
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+      ${state.giftCodes
+        .map(
+          gift => `
+            <section style="background:#1e293b; padding:14px; border-radius:8px; border:1px solid #334155;">
+              <strong style="color:#facc15; font-size:16px;">${escapeHtml(gift.code)}</strong>
+              <p style="font-size:13px; color:#cbd5e1; margin:4px 0;">Reward: ₹${gift.coins}</p>
+              <p style="font-size:12px; color:#94a3b8;">Used: ${gift.used} / ${gift.maxUses}</p>
+              <label style="font-size:12px; color:#00d26a;">
+                <input type="checkbox" data-gift="${gift.code}" ${
+                  gift.enabled ? 'checked' : ''
+                }> Enabled
+              </label>
+            </section>
+          `
+        )
+        .join('')}
+    </div>
   `
 
   document.querySelector('#createGiftBtn').onclick = () => {
@@ -2226,9 +2403,9 @@ function adminAnnouncement() {
   const state = getAdminState()
 
   document.querySelector('#adminContent').innerHTML = `
-    <h1>Announcement</h1>
-    <section class="yw-normal-card">
-      <textarea id="announcementText" rows="6" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:10px;">${escapeHtml(
+    <h1>Announcement Bar</h1>
+    <section style="background:#1e293b; padding:20px; border-radius:12px; max-width:550px;">
+      <textarea id="announcementText" rows="6" style="width:100%; padding:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:6px; margin-bottom:12px;">${escapeHtml(
         state.announcement || ''
       )}</textarea>
       <button id="saveAnnouncement" class="main-btn">Save Announcement</button>
@@ -2237,7 +2414,7 @@ function adminAnnouncement() {
 
   document.querySelector('#saveAnnouncement').onclick = () => {
     setAnnouncement(document.querySelector('#announcementText').value)
-    showToast('Announcement saved', 'success')
+    showToast('Announcement updated on homepage!', 'success')
   }
 }
 
