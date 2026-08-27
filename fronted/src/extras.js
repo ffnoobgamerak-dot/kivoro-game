@@ -1,5 +1,10 @@
 /* =========================
-   EXTRAS & UTILITIES (Kivoro Play)
+   EXTRAS & UTILITIES (YaarWin / Kivoro Club)
+   + Toast Notification (91 Club Style Floating Popups)
+   + Customer Service Modal (Telegram / WhatsApp)
+   + User Bet Records Storage
+   + Deposit & Withdrawal UI Helpers
+   + Promotion Sub-Node Data Calculator
 ========================= */
 
 // 1. Toast Notification (91 Club Style Floating Popups)
@@ -11,8 +16,8 @@ export function showToast(message, type = 'info') {
   toast.className = 'kivoro-toast'
   
   let bg = '#1e293b'
-  if (type === 'success') bg = '#16a34a'
-  if (type === 'error') bg = '#dc2626'
+  if (type === 'success') bg = '#00d26a'
+  if (type === 'error') bg = '#ef4444'
 
   toast.style.cssText = `
     position: fixed;
@@ -22,12 +27,14 @@ export function showToast(message, type = 'info') {
     background: ${bg};
     color: #fff;
     padding: 12px 24px;
-    border-radius: 8px;
+    border-radius: 25px;
     font-size: 14px;
     font-weight: 700;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    z-index: 99999;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    z-index: 999999;
     transition: opacity 0.3s ease;
+    text-align: center;
+    white-space: nowrap;
   `
   toast.textContent = message
   document.body.appendChild(toast)
@@ -38,7 +45,7 @@ export function showToast(message, type = 'info') {
   }, 2500)
 }
 
-// 2. Customer Service Modal / Dialog Component (91 Club Style Support)
+// 2. Customer Service Modal / Dialog Component (YaarWin Style Support)
 export function openCustomerService() {
   document.querySelector('.support-modal')?.remove()
 
@@ -47,18 +54,27 @@ export function openCustomerService() {
   modal.style.cssText = `
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
     display: grid;
     place-items: center;
-    z-index: 99999;
+    z-index: 999999;
   `
   modal.innerHTML = `
-    <div style="background:#1e293b; padding:25px; border-radius:14px; width:90%; max-width:350px; text-align:center; color:#fff; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
-      <h2 style="margin-bottom:10px;">🎧 Customer Support</h2>
-      <p style="font-size:13px; color:#94a3b8; margin-bottom:20px;">Kisi bhi samasya ya deposit/withdrawal issue ke liye hamare official support se judein:</p>
-      <a href="https://t.me/" target="_blank" style="display:block; background:#2563eb; color:#fff; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold; margin-bottom:10px;">Telegram Support</a>
-      <a href="https://wa.me/" target="_blank" style="display:block; background:#22c55e; color:#fff; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold; margin-bottom:15px;">WhatsApp Support</a>
-      <button id="closeSupport" style="background:#334155; color:#fff; border:none; padding:10px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">Close</button>
+    <div style="background:#fff; padding:25px; border-radius:18px; width:90%; max-width:340px; text-align:center; color:#1e293b; box-shadow:0 15px 35px rgba(0,0,0,0.25);">
+      <div style="font-size:45px; margin-bottom:8px;">🎧</div>
+      <h2 style="margin-bottom:6px; font-size:20px; color:#00d26a; font-weight:800;">24/7 Customer Support</h2>
+      <p style="font-size:13px; color:#64748b; margin-bottom:20px; line-height:1.4;">Kisi bhi recharge, withdrawal ya game samasya ke liye official helpline se judein:</p>
+      
+      <a href="https://t.me/" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#0088cc; color:#fff; padding:12px; border-radius:10px; text-decoration:none; font-weight:bold; font-size:14px; margin-bottom:10px;">
+        <span>✈️</span> Telegram Live Chat
+      </a>
+      
+      <a href="https://wa.me/" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#25d366; color:#fff; padding:12px; border-radius:10px; text-decoration:none; font-weight:bold; font-size:14px; margin-bottom:15px;">
+        <span>💬</span> WhatsApp Official Support
+      </a>
+      
+      <button id="closeSupport" style="background:#e2e8f0; color:#475569; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">Close</button>
     </div>
   `
   document.body.appendChild(modal)
@@ -73,7 +89,7 @@ export function saveUserBetRecord(userId, record) {
     bets.unshift(record)
     localStorage.setItem(key, JSON.stringify(bets.slice(0, 50)))
   } catch (e) {
-    console.error(e)
+    console.error('Error saving bet record:', e)
   }
 }
 
@@ -84,31 +100,30 @@ export function getUserBetRecords(userId) {
     return []
   }
 }
+
 /* =========================
-   KIVORO PLAY - DEPOSIT HISTORY UI & HELPERS
+   DEPOSIT HISTORY UI & HELPERS
 ========================= */
 
-// Deposit submit aur history display karne ka helper
 window.handleUserDepositUI = function(userId, amount, utrNumber) {
   if (typeof verifyAndProcessDeposit === 'function') {
     const result = verifyAndProcessDeposit(userId, amount, utrNumber);
     alert(result.message);
     if (result.success) {
-      renderDepositHistory(userId);
+      window.renderDepositHistory(userId);
     }
   } else {
     console.log('Deposit verification module active');
   }
 };
 
-// 91 Club style history render karne ka function
 window.renderDepositHistory = function(userId) {
   try {
     const container = document.getElementById('deposit-history-container');
-    if (!container) return; // Agar element nahi hai toh chupchaap skip karega (purana code safe rahega)
+    if (!container) return;
 
     const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]');
-    const myDeposits = deposits.filter(d => d.uid === userId);
+    const myDeposits = deposits.filter(d => String(d.uid) === String(userId));
 
     if (myDeposits.length === 0) {
       container.innerHTML = '<p style="text-align:center; color:#888; padding:10px;">No deposit records found</p>';
@@ -118,13 +133,13 @@ window.renderDepositHistory = function(userId) {
     let html = '';
     myDeposits.forEach(item => {
       html += `
-        <div style="background: #1a1a2e; padding: 12px; margin-bottom: 8px; border-radius: 8px; color: #fff; border-left: 4px solid #00E676;">
+        <div style="background: #ffffff; padding: 12px; margin-bottom: 8px; border-radius: 8px; border-left: 4px solid #00d26a; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
           <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span style="color: #00E676;">₹${item.amount}</span>
-            <span style="background: rgba(0, 230, 118, 0.2); color: #00E676; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${item.status}</span>
+            <span style="color: #00d26a;">₹${item.amount}</span>
+            <span style="background: rgba(0, 210, 106, 0.15); color: #00d26a; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${item.status}</span>
           </div>
-          <div style="font-size: 12px; color: #bbb; margin-top: 4px;">UTR ID: ${item.utr}</div>
-          <div style="font-size: 10px; color: #777; margin-top: 2px;">Date: ${item.date}</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">UTR: ${item.utr}</div>
+          <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Date: ${item.date || item.createdAt}</div>
         </div>
       `;
     });
@@ -134,115 +149,39 @@ window.renderDepositHistory = function(userId) {
     console.error('History render error:', e);
   }
 };
+
 /* =========================
-   KIVORO PLAY - WITHDRAWAL STATUS & PROMOTION DATA SYSTEM
+   WITHDRAWAL STATUS & PROMOTION DATA SYSTEM
 ========================= */
 
-// 1. Withdrawal Request with Pending -> Processing -> Completed Flow
-window.requestUserWithdrawal = function(userId, amount, bankDetails) {
-  const user = JSON.parse(localStorage.getItem('kivoro_current_user') || '{}');
-  const withdrawAmount = Number(amount);
-
-  if (!user || user.id !== userId) {
-    alert('Please login first!');
-    return { success: false, message: 'Not logged in' };
-  }
-
-  // Need to Bet check (Aapka rule)
-  if (user.needToBet && user.balance < withdrawAmount) {
-    alert('Withdrawal failed: Minimum betting requirement or insufficient balance!');
-    return { success: false, message: 'Insufficient balance or betting requirement pending' };
-  }
-
-  // Save withdrawal with 'Pending' status (jaise 91 Club mein hota hai)
-  const withdrawals = JSON.parse(localStorage.getItem('kivoro_withdrawals') || '[]');
-  const newWithdrawal = {
-    id: 'WD-' + Math.floor(100000 + Math.random() * 900000),
-    uid: userId,
-    amount: withdrawAmount,
-    status: 'Pending', // Start with Pending
-    bank: bankDetails || 'Bank Account',
-    date: new Date().toLocaleString(),
-    loginDate: user.createdAt || new Date().toLocaleString()
-  };
-
-  withdrawals.unshift(newWithdrawal);
-  localStorage.setItem('kivoro_withdrawals', JSON.stringify(withdrawals));
-
-  alert('Withdrawal request submitted successfully! Status: Pending');
-  return { success: true, message: 'Withdrawal request submitted', data: newWithdrawal };
-};
-
-// 2. Promotion & Sub-Node Data Calculator (Invited users, Deposit, Betting, Commission)
-window.loadPromotionSubNodeData = function(userReferralCode) {
-  try {
-    const users = JSON.parse(localStorage.getItem('kivoro_users') || '[]');
-    const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]');
-
-    // Find users invited by this referral code
-    const invitedUsers = users.filter(u => u.inviteCode === userReferralCode);
-    const totalRegister = invitedUsers.length;
-
-    let totalDeposit = 0;
-    let totalBetting = 0;
-
-    invitedUsers.forEach(invUser => {
-      // Calculate total deposits of invited users
-      const userDeps = deposits.filter(d => d.uid === invUser.id && d.status === 'Completed');
-      userDeps.forEach(d => { totalDeposit += Number(d.amount) || 0; });
-    });
-
-    // Commission calculation (e.g., 2% of total deposit/betting)
-    const commissionEarned = totalDeposit * 0.02;
-
-    return {
-      totalRegister,
-      totalDeposit,
-      totalBetting: totalDeposit * 1.5, // Estimated turnover/betting
-      commissionEarned: commissionEarned.toFixed(2)
-    };
-  } catch (e) {
-    console.error('Promotion data error:', e);
-    return { totalRegister: 0, totalDeposit: 0, totalBetting: 0, commissionEarned: 0 };
-  }
-};
-/* =========================
-   KIVORO PLAY - OVERRIDE FIX FOR WITHDRAWAL & UPI
-========================= */
-
-// Purane wale galat/direct success function ko override karke Pending status lagane ke liye
 window.requestUserWithdrawal = function(amount, upiId) {
   const currentUser = JSON.parse(localStorage.getItem('kivoro_current_user') || 'null');
   
   if (!currentUser) {
     alert('Please login first!');
-    return;
+    return { success: false, message: 'Not logged in' };
   }
 
   const cleanUpi = String(upiId || '').trim();
   const withdrawAmount = Number(amount);
 
-  // UPI validation (fake ya khali UPI rokne ke liye)
   if (!cleanUpi || !cleanUpi.includes('@')) {
     alert('Kripya ek valid UPI ID enter karein (jaise user@paytm)');
-    return;
+    return { success: false, message: 'Invalid UPI' };
   }
 
   if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
     alert('Invalid withdrawal amount!');
-    return;
+    return { success: false, message: 'Invalid amount' };
   }
 
-  // Balance check
   if (Number(currentUser.balance) < withdrawAmount) {
     alert('Insufficient balance for withdrawal!');
-    return;
+    return { success: false, message: 'Insufficient balance' };
   }
 
-  // Balance cut karo aur save karo
   currentUser.balance = Number(currentUser.balance) - withdrawAmount;
   
-  // Local storage aur current user update
   const users = JSON.parse(localStorage.getItem('kivoro_users') || '[]');
   const uIndex = users.findIndex(u => u.id === currentUser.id);
   if (uIndex !== -1) {
@@ -251,21 +190,49 @@ window.requestUserWithdrawal = function(amount, upiId) {
   }
   localStorage.setItem('kivoro_current_user', JSON.stringify(currentUser));
 
-  // 91 Club Style: Pending Status (Direct success nahi hoga!)
   const withdrawals = JSON.parse(localStorage.getItem('kivoro_withdrawals') || '[]');
   const newWd = {
     id: 'WD-' + Math.floor(100000 + Math.random() * 900000),
     uid: currentUser.id,
     amount: withdrawAmount,
-    status: 'Pending', // Ab yahan Pending dikhega!
+    status: 'Pending',
     upi: cleanUpi,
-    date: new Date().toLocaleString()
+    date: new Date().toLocaleString(),
+    createdAt: new Date().toISOString()
   };
 
   withdrawals.unshift(newWd);
   localStorage.setItem('kivoro_withdrawals', JSON.stringify(withdrawals));
 
-  // UI ko turant update karne ke liye
   alert('Withdrawal request submitted successfully! Status: Pending');
-  window.location.reload(); 
+  return { success: true, message: 'Withdrawal submitted', data: newWd };
+};
+
+window.loadPromotionSubNodeData = function(userReferralCode) {
+  try {
+    const users = JSON.parse(localStorage.getItem('kivoro_users') || '[]');
+    const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]');
+
+    const invitedUsers = users.filter(u => u.inviteCode === userReferralCode);
+    const totalRegister = invitedUsers.length;
+
+    let totalDeposit = 0;
+
+    invitedUsers.forEach(invUser => {
+      const userDeps = deposits.filter(d => d.uid === invUser.id && d.status === 'Completed');
+      userDeps.forEach(d => { totalDeposit += Number(d.amount) || 0; });
+    });
+
+    const commissionEarned = totalDeposit * 0.02;
+
+    return {
+      totalRegister,
+      totalDeposit,
+      totalBetting: totalDeposit * 1.5,
+      commissionEarned: commissionEarned.toFixed(2)
+    };
+  } catch (e) {
+    console.error('Promotion data error:', e);
+    return { totalRegister: 0, totalDeposit: 0, totalBetting: 0, commissionEarned: 0 };
+  }
 };

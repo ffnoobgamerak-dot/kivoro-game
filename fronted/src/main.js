@@ -1,4 +1,4 @@
-import './style.css'
+  import './style.css'
 
 import {
   registerUser,
@@ -7,7 +7,9 @@ import {
   logoutUser,
   updateCurrentUser,
   saveUserUpiSecure,
-  getCurrentUserUpiStatus
+  getCurrentUserUpiStatus,
+  requestUserWithdrawal,
+  saveUserTransaction
 } from './auth.js'
 
 import {
@@ -25,9 +27,12 @@ import {
   claimGiftCode,
   setForcedResult,
   setModeForcedResult,
+  setAviatorCrashPoint,
   getReferralDetails,
   getAllWithdrawals,
-  updateAdminWithdrawalStatus
+  updateAdminWithdrawalStatus,
+  getAllDeposits,
+  updateAdminDepositStatus
 } from './admin.js'
 
 import {
@@ -57,7 +62,7 @@ let selectedAmount = 10
 let lockedPrediction = null
 
 let period = Number(
-  localStorage.getItem('kivoro_period') || 10001
+  localStorage.getItem('kivoro_period') || 20260826100051604
 )
 
 let history = []
@@ -70,7 +75,12 @@ try {
   const savedHistory = JSON.parse(
     localStorage.getItem('kivoro_history') || '[]'
   )
-  history = Array.isArray(savedHistory) ? savedHistory : []
+  history = Array.isArray(savedHistory) && savedHistory.length ? savedHistory : [
+    { period: 20260826100051603, number: 4, color: 'RED', size: 'Small' },
+    { period: 20260826100051602, number: 3, color: 'GREEN', size: 'Small' },
+    { period: 20260826100051601, number: 4, color: 'RED', size: 'Small' },
+    { period: 20260826100051600, number: 9, color: 'GREEN', size: 'Big' }
+  ]
 } catch {
   history = []
 }
@@ -98,18 +108,12 @@ function getBalance() {
 
 function setBalance(value) {
   updateCurrentUser({
-    balance: Math.max(
-      0,
-      Math.floor(Number(value) || 0)
-    )
+    balance: Math.max(0, Math.floor(Number(value) || 0))
   })
 }
 
 function saveHistory() {
-  localStorage.setItem(
-    'kivoro_history',
-    JSON.stringify(history.slice(0, 100))
-  )
+  localStorage.setItem('kivoro_history', JSON.stringify(history.slice(0, 100)))
 }
 
 function savePeriod() {
@@ -123,9 +127,7 @@ function formatTime(seconds) {
 }
 
 function getModeName() {
-  return (
-    modes.find(mode => mode.seconds === currentMode)?.name || 'Wingo'
-  )
+  return modes.find(mode => mode.seconds === currentMode)?.name || 'Wingo 30 Sec'
 }
 
 function stopAllSpecialTimers() {
@@ -136,7 +138,7 @@ function stopAllSpecialTimers() {
   }
 }
 
-// 🛡️ Game Entry Deposit Guard (100 Rs Check)
+// 🛡️ ₹100 Deposit Guard
 function checkGameEntry(onSuccess) {
   const balance = getBalance()
   if (balance < 100) {
@@ -174,7 +176,6 @@ function showDepositPromptModal() {
   `
 
   document.body.appendChild(modal)
-
   document.querySelector('#cancelPromptBtn').onclick = () => modal.remove()
   document.querySelector('#goToDepositBtn').onclick = () => {
     modal.remove()
@@ -182,6 +183,130 @@ function showDepositPromptModal() {
     setTimeout(() => {
       document.querySelector('#depositBtn')?.click()
     }, 100)
+  }
+}
+
+/* =========================
+   91 CLUB STYLE SEPARATE DEPOSIT GATEWAY (Opens in New Tab)
+========================= */
+
+function openDepositGateway(amount, channel = 'UPI Fast Pay') {
+  const user = getCurrentUser()
+  if (!user) {
+    showToast('Please login first!', 'error')
+    return
+  }
+
+  const bonus = Math.floor(amount * 0.10)
+  const orderId = 'ORD-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000)
+  const upiId = 'ayush122312@ybl'
+  const upiPayUrl = `upi://pay?pa=${upiId}&pn=YaarWinClub&am=${amount}&cu=INR&tn=Deposit_${orderId}`
+
+  const gatewayHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Payment Gateway - YaarWin / 91 Club</title>
+      <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
+        body { background:#f1f5f9; display:flex; justify-content:center; padding:15px; color:#1e293b; }
+        .pay-box { background:#fff; width:100%; max-width:420px; border-radius:16px; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.08); }
+        .header { text-align:center; padding-bottom:15px; border-bottom:1px solid #e2e8f0; }
+        .timer-badge { background:#fee2e2; color:#ef4444; padding:4px 10px; border-radius:20px; font-weight:bold; font-size:12px; display:inline-block; margin-top:6px; }
+        .amount-row { display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:12px; border-radius:10px; margin:15px 0; border:1px solid #e2e8f0; }
+        .upi-box { background:#f0fdf4; border:1px dashed #00d26a; padding:12px; border-radius:10px; text-align:center; margin-bottom:15px; }
+        .copy-btn { background:#00d26a; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer; margin-left:6px; }
+        .qr-img { width:140px; height:140px; border-radius:8px; border:1px solid #e2e8f0; margin:10px auto; display:block; }
+        .btn-pay-app { display:block; width:100%; text-align:center; background:#00d26a; color:#fff; padding:12px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:14px; margin-bottom:15px; }
+        .input-field { width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; margin-bottom:12px; outline:none; }
+        .submit-btn { width:100%; padding:14px; background:#2563eb; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; }
+      </style>
+    </head>
+    <body>
+      <div class="pay-box">
+        <div class="header">
+          <h2 style="color:#00d26a; font-weight:900;">👑 YaarWin Secure Gateway</h2>
+          <small style="color:#64748b;">Order: ${orderId} | Channel: ${channel}</small><br>
+          <span class="timer-badge">⏳ Payment Expires in: <span id="payTimer">10:00</span></span>
+        </div>
+
+        <div class="amount-row">
+          <div>
+            <span style="font-size:12px; color:#64748b;">Deposit Amount:</span><br>
+            <strong style="font-size:22px; color:#00d26a;">₹${amount.toFixed(2)}</strong>
+          </div>
+          <span style="background:#fef3c7; color:#d97706; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">+₹${bonus} Bonus</span>
+        </div>
+
+        <div class="upi-box">
+          <span style="font-size:12px; color:#64748b;">Official Receiver UPI:</span><br>
+          <strong style="font-size:14px; color:#1e293b;" id="upiText">${upiId}</strong>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('${upiId}'); alert('UPI ID Copied!');">Copy</button>
+        </div>
+
+        <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiPayUrl)}" alt="Scan QR">
+
+        <a class="btn-pay-app" href="${upiPayUrl}" target="_blank">Pay via GPay / PhonePe / Paytm App</a>
+
+        <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:15px; border:1px solid #e2e8f0;">
+          <label style="font-size:12px; font-weight:bold; color:#475569; display:block; margin-bottom:4px;">Enter 12-Digit UPI Ref / UTR Number:</label>
+          <input id="utrInput" class="input-field" maxlength="12" placeholder="e.g. 4235XXXXXXXX" inputmode="numeric">
+          <button id="submitUtrBtn" class="submit-btn">Submit UTR for Instant Credit</button>
+        </div>
+      </div>
+
+      <script>
+        let sec = 600;
+        const timerEl = document.getElementById('payTimer');
+        const timerInt = setInterval(() => {
+          sec--;
+          if (sec <= 0) { clearInterval(timerInt); alert('Payment time expired!'); window.close(); }
+          const m = Math.floor(sec/60);
+          const s = sec % 60;
+          timerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        }, 1000);
+
+        document.getElementById('submitUtrBtn').onclick = () => {
+          const utr = document.getElementById('utrInput').value.trim();
+          if(!utr || utr.length < 8) {
+            alert('Please enter valid 12-digit UTR number!');
+            return;
+          }
+          const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]');
+          if(deposits.some(d => d.utr === utr)) {
+            alert('This UTR has already been submitted!');
+            return;
+          }
+          deposits.unshift({
+            id: 'DEP-' + Math.floor(100000 + Math.random()*900000),
+            uid: '${user.id}',
+            name: '${escapeHtml(user.name)}',
+            phone: '${escapeHtml(user.phone)}',
+            amount: ${amount},
+            bonus: ${bonus},
+            utr: utr,
+            channel: '${channel}',
+            status: 'Pending',
+            date: new Date().toLocaleString(),
+            createdAt: new Date().toISOString()
+          });
+          localStorage.setItem('kivoro_deposits', JSON.stringify(deposits));
+          alert('Deposit submitted successfully! Waiting for Admin Approval.');
+          window.close();
+        };
+      </script>
+    </body>
+    </html>
+  `
+
+  const win = window.open('', '_blank')
+  if (win) {
+    win.document.write(gatewayHtml)
+    win.document.close()
+  } else {
+    showToast('Pop-up blocked! Allow popups to open Payment Gateway.', 'error')
   }
 }
 
@@ -218,7 +343,7 @@ function connectNavigation() {
 }
 
 /* =========================
-   AUTHENTICATION VIEWS (91 Club Modern Style)
+   AUTHENTICATION VIEWS (91 Club Style)
 ========================= */
 
 function showAuthTab(type = 'login') {
@@ -310,16 +435,11 @@ function showAuthTab(type = 'login') {
   }
 }
 
-function showLogin() {
-  showAuthTab('login')
-}
-
-function showRegister() {
-  showAuthTab('register')
-}
+function showLogin() { showAuthTab('login') }
+function showRegister() { showAuthTab('register') }
 
 /* =========================
-   HOME SCREEN (With Live Winner Ticker)
+   HOME SCREEN
 ========================= */
 
 function showHome() {
@@ -465,7 +585,6 @@ function showHome() {
     }
   }
 
-  // Live Winner Ticker Simulation
   startLiveWinnerTicker()
   connectNavigation()
 }
@@ -583,7 +702,7 @@ function showMiniGame(name) {
         winCoins = isWin ? miniBetAmt * 2 : 0
         outcome = `Result ${val}`
       } else {
-        const vals = [1, 2, 5, 10]
+        const vals = new Array(1, 2, 5, 10)
         const val = vals[Math.floor(Math.random() * vals.length)]
         display.textContent = `🎡 ${val}x`
         isWin = isWin && val >= 2
@@ -608,7 +727,7 @@ function showMiniGame(name) {
 }
 
 /* =========================
-   WINGO ENGINE
+   WINGO ENGINE (With 0-9 Colored Circular Balls)
 ========================= */
 
 function showWingo() {
@@ -640,7 +759,7 @@ function showWingo() {
       </section>
 
       <section class="normal-card">
-        <div id="wingoStatus" style="text-align:center; padding:15px; border-radius:14px; background:#16263b; margin-bottom:20px; font-weight:bold; border:1px solid #334155;">
+        <div id="wingoStatus" style="text-align:center; padding:12px; border-radius:14px; background:#16263b; margin-bottom:15px; font-weight:bold; border:1px solid #334155;">
           Round running
         </div>
 
@@ -652,10 +771,17 @@ function showWingo() {
         </section>
 
         <h3>Choose Number</h3>
-        <section class="number-grid">
-          ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-            .map(number => `<button class="number" data-choice="${number}">${number}</button>`)
-            .join('')}
+        <section class="number-grid" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin:10px 0;">
+          <button class="number num-ball dual-violet-red" data-choice="0">0</button>
+          <button class="number num-ball green" data-choice="1">1</button>
+          <button class="number num-ball red" data-choice="2">2</button>
+          <button class="number num-ball green" data-choice="3">3</button>
+          <button class="number num-ball red" data-choice="4">4</button>
+          <button class="number num-ball dual-violet-green" data-choice="5">5</button>
+          <button class="number num-ball red" data-choice="6">6</button>
+          <button class="number num-ball green" data-choice="7">7</button>
+          <button class="number num-ball red" data-choice="8">8</button>
+          <button class="number num-ball green" data-choice="9">9</button>
         </section>
 
         <h3>Choose Size</h3>
@@ -664,7 +790,17 @@ function showWingo() {
           <button class="choice small" data-choice="SMALL">Small</button>
         </section>
 
-        <h3>Select Amount</h3>
+        <h3>Select Multiplier</h3>
+        <div class="multiplier-row" style="display:flex; gap:6px; overflow-x:auto; padding:6px 0; margin-bottom:10px;">
+          <button class="mul-chip active" data-mul="1">X1</button>
+          <button class="mul-chip" data-mul="5">X5</button>
+          <button class="mul-chip" data-mul="10">X10</button>
+          <button class="mul-chip" data-mul="20">X20</button>
+          <button class="mul-chip" data-mul="50">X50</button>
+          <button class="mul-chip" data-mul="100">X100</button>
+        </div>
+
+        <h3>Select Base Amount</h3>
         <div class="amount-buttons" style="display:flex; gap:6px; flex-wrap:wrap;">
           <button class="amount-choice selected" data-amount="10">10</button>
           <button class="amount-choice" data-amount="50">50</button>
@@ -679,7 +815,7 @@ function showWingo() {
           <button id="amountPlus" style="padding:8px 14px; background:#334155; border:none; color:#fff; border-radius:6px;">+</button>
         </div>
 
-        <p id="amountStatus" style="text-align:center; font-weight:700; margin-top:8px;">Selected Amount: 10</p>
+        <p id="amountStatus" style="text-align:center; font-weight:700; margin-top:8px;">Selected Amount: 10 (Total: ₹10)</p>
 
         <div class="bet-summary">
           <span>Selected</span>
@@ -698,6 +834,7 @@ function showWingo() {
   `
 
   selectedAmount = 10
+  selectedMultiplier = 1
 
   document.querySelector('#backBtn').onclick = () => {
     stopAllSpecialTimers()
@@ -721,6 +858,15 @@ function showWingo() {
     }
   })
 
+  document.querySelectorAll('[data-mul]').forEach(button => {
+    button.onclick = () => {
+      selectedMultiplier = Number(button.dataset.mul)
+      document.querySelectorAll('[data-mul]').forEach(item => item.classList.remove('active'))
+      button.classList.add('active')
+      updateAmountStatus()
+    }
+  })
+
   document.querySelectorAll('[data-amount]').forEach(button => {
     button.onclick = () => {
       selectedAmount = Number(button.dataset.amount)
@@ -730,26 +876,31 @@ function showWingo() {
       button.classList.add('selected')
       const amountInput = document.querySelector('#gameAmount')
       if (amountInput) amountInput.value = selectedAmount
-      const amountStatus = document.querySelector('#amountStatus')
-      if (amountStatus) amountStatus.textContent = `Selected Amount: ${selectedAmount}`
+      updateAmountStatus()
     }
   })
 
   document.querySelector('#amountMinus').onclick = () => {
     selectedAmount = Math.max(10, selectedAmount - 10)
     document.querySelector('#gameAmount').value = selectedAmount
-    document.querySelector('#amountStatus').textContent = `Selected Amount: ${selectedAmount}`
+    updateAmountStatus()
   }
 
   document.querySelector('#amountPlus').onclick = () => {
     selectedAmount += 10
     document.querySelector('#gameAmount').value = selectedAmount
-    document.querySelector('#amountStatus').textContent = `Selected Amount: ${selectedAmount}`
+    updateAmountStatus()
   }
 
   document.querySelector('#gameAmount').oninput = (e) => {
     selectedAmount = Number(e.target.value) || 0
-    document.querySelector('#amountStatus').textContent = `Selected Amount: ${selectedAmount}`
+    updateAmountStatus()
+  }
+
+  function updateAmountStatus() {
+    const total = selectedAmount * selectedMultiplier
+    const amountStatus = document.querySelector('#amountStatus')
+    if (amountStatus) amountStatus.textContent = `Selected Amount: ${selectedAmount} x ${selectedMultiplier} (Total: ₹${total})`
   }
 
   const lockBtn = document.querySelector('#lockPredictionBtn')
@@ -804,28 +955,29 @@ function lockPrediction() {
   }
 
   const currentBalance = getBalance()
+  const totalBet = selectedAmount * selectedMultiplier
 
-  if (selectedAmount <= 0) {
+  if (totalBet <= 0) {
     showToast('Valid amount select karein!', 'error')
     return
   }
 
-  if (selectedAmount > currentBalance) {
+  if (totalBet > currentBalance) {
     showToast('Insufficient balance!', 'error')
     return
   }
 
-  setBalance(currentBalance - selectedAmount)
+  setBalance(currentBalance - totalBet)
   
   lockedPrediction = {
     choice: selectedChoice,
-    amount: selectedAmount,
+    amount: totalBet,
     period: period
   }
 
   const status = document.querySelector('#predictionStatus')
   if (status) {
-    status.textContent = `Wait for results... Locked: ${selectedChoice} (${selectedAmount} Coins)`
+    status.textContent = `Wait for results... Locked: ${selectedChoice} (${totalBet} Coins)`
   }
 
   showToast('Bet placed successfully! Wait for results.', 'success')
@@ -836,7 +988,7 @@ function getResult(number) {
   let color = 'RED'
   if (number === 0 || number === 5) {
     color = 'VIOLET'
-  } else if ([1, 3, 7, 9].includes(number)) {
+  } else if (number === 1 || number === 3 || number === 7 || number === 9) {
     color = 'GREEN'
   }
 
@@ -1088,6 +1240,10 @@ function showResultPopup(won, result, payout) {
   }, 4000)
 }
 
+/* =========================
+   AVIATOR ENGINE
+========================= */
+
 function getAviatorHistory() {
   try {
     const value = JSON.parse(
@@ -1209,7 +1365,8 @@ function startAviatorRoundLive() {
   if (currentPage !== 'aviator') return
 
   let multiplier = 1
-  const stopAt = Number((1.05 + Math.random() * 5).toFixed(2))
+  const state = getAdminState()
+  const stopAt = state.modeForcedResults?.aviator ? Number(state.modeForcedResults.aviator) : Number((1.05 + Math.random() * 5).toFixed(2))
   const status = document.querySelector('#aviatorStatus')
   const display = document.querySelector('#aviatorMultiplier')
 
@@ -1313,7 +1470,7 @@ function showActivity() {
 }
 
 /* =========================
-   PROMOTION & SUBORDINATE DATA
+   PROMOTION & SUBORDINATE DATA (YaarWin / 91 Club Style)
 ========================= */
 
 function showPromotion() {
@@ -1422,7 +1579,7 @@ function showPromotion() {
 }
 
 /* =========================
-   WALLET & DEPOSIT / WITHDRAWAL
+   WALLET & DEPOSIT / WITHDRAWAL (6 Channels + 91 Club Gateway)
 ========================= */
 
 function showWallet() {
@@ -1459,6 +1616,11 @@ function showWallet() {
       <h3>Deposit Funds (10% Extra Bonus)</h3>
       <p style="font-size:12px; color:#aaa; margin-bottom:8px;">Select payment channel & pay using external UPI app, then submit UTR:</p>
       
+      <!-- 91 Club Instant Gateway Button -->
+      <button id="open91GatewayBtn" class="main-btn" style="background: linear-gradient(135deg, #00d26a, #047857); padding: 12px; margin-bottom: 12px; font-size: 14px; font-weight: 800;">
+        ⚡ Open 91 Club Payment Gateway (New Tab)
+      </button>
+
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
         <button class="dep-panel-btn main-btn" data-channel="Paytm" style="background:#10b981; font-size:12px; padding:8px;">Paytm Gateway</button>
         <button class="dep-panel-btn main-btn" data-channel="PhonePe" style="background:#334155; font-size:12px; padding:8px;">PhonePe Pay</button>
@@ -1478,11 +1640,16 @@ function showWallet() {
         </div>
       </div>
 
-      <input id="depositAmountInput" type="number" placeholder="Enter Amount (Min 100)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
+      <input id="depositAmountInput" type="number" placeholder="Enter Amount (Min 100)" value="100" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
       <input id="depositUtrInput" type="text" placeholder="Enter 12-digit UTR / Ref Number" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
       
       <button id="submitDepositReqBtn" class="main-btn">Submit Deposit for Approval</button>
     `
+
+    document.querySelector('#open91GatewayBtn').onclick = () => {
+      const amt = Number(document.querySelector('#depositAmountInput').value) || 100
+      openDepositGateway(amt, 'UPI Express Gateway')
+    }
 
     document.querySelectorAll('.dep-panel-btn').forEach(btn => {
       btn.onclick = (e) => {
@@ -1508,11 +1675,14 @@ function showWallet() {
       const newDep = {
         id: 'DEP-' + Math.floor(100000 + Math.random() * 900000),
         uid: user.id,
+        name: user.name,
+        phone: user.phone,
         amount: amt,
         bonus: Math.floor(amt * 0.10),
         utr: utr,
         status: 'Pending',
-        date: new Date().toLocaleString()
+        date: new Date().toLocaleString(),
+        createdAt: new Date().toISOString()
       }
 
       deposits.unshift(newDep)
@@ -1552,29 +1722,19 @@ function showWallet() {
         }
       }
 
-      setBalance(getBalance() - amt)
-
-      const withdrawals = JSON.parse(localStorage.getItem('kivoro_withdrawals') || '[]')
-      const newWd = {
-        id: 'WD-' + Math.floor(100000 + Math.random() * 900000),
-        uid: user.id,
-        amount: amt,
-        status: 'Pending',
-        upi: upi,
-        date: new Date().toLocaleString()
+      const res = requestUserWithdrawal(user.id, amt, upi)
+      if (res.success) {
+        showToast(res.message, 'success')
+        showWallet()
+      } else {
+        showToast(res.message, 'error')
       }
-
-      withdrawals.unshift(newWd)
-      localStorage.setItem('kivoro_withdrawals', JSON.stringify(withdrawals))
-
-      showToast('Withdrawal request submitted successfully! Status: Pending', 'success')
-      showWallet()
     }
   }
 
   document.querySelector('#historyBtn').onclick = () => {
     const withdrawals = getAllWithdrawals().filter(w => String(w.uid) === String(user.id))
-    const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]').filter(d => String(d.uid) === String(user.id))
+    const deposits = getAllDeposits().filter(d => String(d.uid) === String(user.id))
 
     const actionArea = document.querySelector('#walletActionArea')
     actionArea.innerHTML = `
@@ -1596,7 +1756,7 @@ function showWallet() {
         <div style="background:#0f172a; padding:8px; margin-bottom:6px; border-radius:6px; border-left:3px solid ${w.status === 'Completed' ? '#22c55e' : w.status === 'Rejected' ? '#ef4444' : '#facc15'};">
           <strong>₹${w.amount}</strong> via UPI (${escapeHtml(w.upi)})<br>
           <span style="color:#aaa;">Status: <strong>${w.status}</strong></span><br>
-          <small style="color:#666;">${w.date}</small>
+          <small style="color:#666;">${w.date || w.createdAt}</small>
         </div>
       `).join('')
     }
@@ -1608,10 +1768,10 @@ function showWallet() {
         return
       }
       container.innerHTML = deposits.map(d => `
-        <div style="background:#0f172a; padding:8px; margin-bottom:6px; border-radius:6px; border-left:3px solid ${d.status === 'Completed' ? '#22c55e' : '#facc15'};">
+        <div style="background:#0f172a; padding:8px; margin-bottom:6px; border-radius:6px; border-left:3px solid ${d.status === 'Completed' ? '#22c55e' : d.status === 'Rejected' ? '#ef4444' : '#facc15'};">
           <strong>₹${d.amount}</strong> (+₹${d.bonus || 0} Bonus)<br>
           <span style="color:#aaa;">UTR: ${escapeHtml(d.utr)} | Status: <strong>${d.status}</strong></span><br>
-          <small style="color:#666;">${d.date}</small>
+          <small style="color:#666;">${d.date || d.createdAt}</small>
         </div>
       `).join('')
     }
@@ -1635,7 +1795,7 @@ function showWallet() {
 }
 
 /* =========================
-   91 CLUB STYLE ACCOUNT & PROFILE
+   91 CLUB STYLE ACCOUNT & PROFILE (UID Copy, VIP Badge & History)
 ========================= */
 
 function showAccount() {
@@ -1644,13 +1804,13 @@ function showAccount() {
   const user = getCurrentUser()
 
   const userBets = getUserBetRecords(user.id)
-  const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]').filter(d => String(d.uid) === String(user.id))
+  const deposits = getAllDeposits().filter(d => String(d.uid) === String(user.id))
   const withdrawals = getAllWithdrawals().filter(w => String(w.uid) === String(user.id))
 
   app().innerHTML = `
     <div class="app-shell" style="padding-bottom: 75px;">
       
-      <!-- 91 Club Header & Profile Avatar Card -->
+      <!-- Profile Avatar Card -->
       <section style="background: linear-gradient(135deg, #1e3a8a, #0f172a); border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid #334155;">
         <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 15px;">
           <div style="width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: grid; place-items: center; font-size: 24px; font-weight: 900; color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
@@ -1669,7 +1829,6 @@ function showAccount() {
           </div>
         </div>
 
-        <!-- 91 Club Wallet Info Box -->
         <div style="background: rgba(15, 23, 42, 0.75); border-radius: 12px; padding: 14px; border: 1px solid #1e293b;">
           <span style="font-size: 12px; color: #94a3b8; display: block;">Total Wallet Balance</span>
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px;">
@@ -1763,13 +1922,13 @@ function showAccount() {
       return
     }
     container.innerHTML = deposits.map(d => `
-      <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid ${d.status === 'Completed' ? '#22c55e' : '#facc15'}; font-size: 12px;">
+      <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid ${d.status === 'Completed' ? '#22c55e' : d.status === 'Rejected' ? '#ef4444' : '#facc15'}; font-size: 12px;">
         <div style="display: flex; justify-content: space-between;">
           <strong style="color: #fff;">₹${d.amount}</strong>
-          <span style="color: ${d.status === 'Completed' ? '#22c55e' : '#facc15'}; font-weight: bold;">${d.status}</span>
+          <span style="color: ${d.status === 'Completed' ? '#22c55e' : d.status === 'Rejected' ? '#ef4444' : '#facc15'}; font-weight: bold;">${d.status}</span>
         </div>
         <div style="color: #94a3b8; margin: 2px 0;">UTR: ${escapeHtml(d.utr)}</div>
-        <small style="color: #64748b;">${d.date}</small>
+        <small style="color: #64748b;">${d.date || d.createdAt}</small>
       </div>
     `).join('')
   }
@@ -1787,7 +1946,7 @@ function showAccount() {
           <span style="color: ${w.status === 'Completed' ? '#22c55e' : w.status === 'Rejected' ? '#ef4444' : '#facc15'}; font-weight: bold;">${w.status}</span>
         </div>
         <div style="color: #94a3b8; margin: 2px 0;">UPI: ${escapeHtml(w.upi)}</div>
-        <small style="color: #64748b;">${w.date}</small>
+        <small style="color: #64748b;">${w.date || w.createdAt}</small>
       </div>
     `).join('')
   }
@@ -1825,7 +1984,7 @@ function showAccount() {
 }
 
 /* =========================
-   FULL ADMIN PANEL & CONTROLS
+   FULL ADMIN PANEL & ALL GAMES CONTROLS
 ========================= */
 
 function showAdmin() {
@@ -1846,11 +2005,11 @@ function showAdmin() {
         <button id="aDashboard">📊 Dashboard</button>
         <button id="aWithdrawals">💳 Withdrawals</button>
         <button id="aDeposits">➕ Deposit Approvals</button>
+        <button id="aControl">🎯 All Games Win/Loss Control</button>
         <button id="aDemoId">🪪 Create Demo ID</button>
         <button id="aPlayers">👥 Players</button>
         <button id="aAgents">👔 Agents</button>
         <button id="aGames">🎮 Game Control</button>
-        <button id="aControl">🎯 Win/Loss Control</button>
         <button id="aGift">🎁 Gift Codes</button>
         <button id="aAnnouncement">📢 Announcement</button>
         <button id="aSite">🏠 Open Site</button>
@@ -1864,11 +2023,11 @@ function showAdmin() {
   document.querySelector('#aDashboard').onclick = adminDashboard
   document.querySelector('#aWithdrawals').onclick = adminWithdrawalsPanel
   document.querySelector('#aDeposits').onclick = adminDepositsPanel
+  document.querySelector('#aControl').onclick = adminWinLossControl
   document.querySelector('#aDemoId').onclick = adminDemoId
   document.querySelector('#aPlayers').onclick = adminPlayers
   document.querySelector('#aAgents').onclick = adminAgents
   document.querySelector('#aGames').onclick = adminGames
-  document.querySelector('#aControl').onclick = adminWinLossControl
   document.querySelector('#aGift').onclick = adminGiftCodes
   document.querySelector('#aAnnouncement').onclick = adminAnnouncement
   document.querySelector('#aSite').onclick = showHome
@@ -1884,7 +2043,7 @@ function adminDashboard() {
   const users = getAllUsers()
   const withdrawals = getAllWithdrawals()
   const pendingWd = withdrawals.filter(w => w.status === 'Pending').length
-  const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]')
+  const deposits = getAllDeposits()
   const pendingDep = deposits.filter(d => d.status === 'Pending').length
 
   document.querySelector('#adminContent').innerHTML = `
@@ -1908,8 +2067,8 @@ function adminWithdrawalsPanel() {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <strong>ID: ${w.id}</strong> (User: ${w.uid})<br>
-              Amount: <strong style="color:#38bdf8;">${w.amount} Coins</strong> | UPI: <strong>${escapeHtml(w.upi)}</strong><br>
-              <small style="color:#aaa;">Date: ${w.date}</small>
+              Amount: <strong style="color:#38bdf8;">₹${w.amount}</strong> | UPI: <strong>${escapeHtml(w.upi)}</strong><br>
+              <small style="color:#aaa;">Date: ${w.date || w.createdAt}</small>
             </div>
             <div>
               <span style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold; background:${w.status === 'Completed' ? '#065f46' : w.status === 'Rejected' ? '#991b1b' : '#854d0e'}; color:#fff;">${w.status}</span>
@@ -1918,7 +2077,7 @@ function adminWithdrawalsPanel() {
           <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
             <button class="main-btn" style="padding:6px 12px; font-size:12px; background:#f59e0b;" onclick="window.updateWd('${w.id}', 'Processing')">Mark Processing</button>
             <button class="main-btn" style="padding:6px 12px; font-size:12px; background:#22c55e;" onclick="window.updateWd('${w.id}', 'Completed')">Mark Completed</button>
-            <button class="main-btn" style="padding:6px 12px; font-size:12px; background:#ef4444;" onclick="window.updateWd('${w.id}', 'Rejected')">Reject & Refund</button>
+            <button class="main-btn" style="padding:6px 12px; font-size:12px; background:#ef4444;" onclick="window.updateWd('${w.id}', 'Rejected')">Reject & Auto-Refund</button>
           </div>
         </section>
       `).join('')}
@@ -1937,20 +2096,21 @@ window.updateWd = function(id, status) {
 }
 
 function adminDepositsPanel() {
-  const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]')
+  const deposits = getAllDeposits()
   document.querySelector('#adminContent').innerHTML = `
     <h1>Deposit Approvals</h1>
     <div style="margin-top:15px;">
       ${deposits.length === 0 ? '<p>No deposit requests found.</p>' : deposits.map(d => `
-        <section class="normal-card" style="margin-bottom:12px; border-left:4px solid ${d.status === 'Completed' ? '#22c55e' : '#facc15'};">
+        <section class="normal-card" style="margin-bottom:12px; border-left:4px solid ${d.status === 'Completed' ? '#22c55e' : d.status === 'Rejected' ? '#ef4444' : '#facc15'};">
           <div>
-            <strong>ID: ${d.id}</strong> (User: ${d.uid})<br>
-            Amount: <strong style="color:#38bdf8;">₹${d.amount}</strong> (+₹${d.bonus} Bonus) | UTR: <strong>${escapeHtml(d.utr)}</strong><br>
-            <small style="color:#aaa;">Date: ${d.date} | Status: <strong>${d.status}</strong></small>
+            <strong>ID: ${d.id}</strong> (User: ${d.uid} - ${escapeHtml(d.name || '')})<br>
+            Amount: <strong style="color:#38bdf8;">₹${d.amount}</strong> (+₹${d.bonus || 0} Bonus) | UTR: <strong>${escapeHtml(d.utr)}</strong><br>
+            <small style="color:#aaa;">Date: ${d.date || d.createdAt} | Status: <strong>${d.status}</strong></small>
           </div>
           ${d.status === 'Pending' ? `
-            <div style="margin-top:10px;">
-              <button class="main-btn" style="background:#22c55e; padding:6px 12px; font-size:12px;" onclick="window.approveDep('${d.id}')">Approve & Add Balance</button>
+            <div style="margin-top:10px; display:flex; gap:8px;">
+              <button class="main-btn" style="background:#22c55e; padding:6px 12px; font-size:12px;" onclick="window.approveDep('${d.id}', 'Completed')">Approve & Add Balance</button>
+              <button class="main-btn" style="background:#ef4444; padding:6px 12px; font-size:12px;" onclick="window.approveDep('${d.id}', 'Rejected')">Reject Deposit</button>
             </div>
           ` : ''}
         </section>
@@ -1959,58 +2119,88 @@ function adminDepositsPanel() {
   `
 }
 
-window.approveDep = function(id) {
-  const deposits = JSON.parse(localStorage.getItem('kivoro_deposits') || '[]')
-  const dep = deposits.find(d => d.id === id)
-  if (!dep || dep.status !== 'Pending') return
-
-  dep.status = 'Completed'
-  localStorage.setItem('kivoro_deposits', JSON.stringify(deposits))
-
-  try {
-    const rawUsers = localStorage.getItem('kivoro_users')
-    if (rawUsers) {
-      const users = JSON.parse(rawUsers)
-      const targetUser = users.find(u => String(u.id) === String(dep.uid))
-      if (targetUser) {
-        targetUser.balance = Number(targetUser.balance || 0) + Number(dep.amount) + Number(dep.bonus)
-        localStorage.setItem('kivoro_users', JSON.stringify(users))
-      }
-    }
-  } catch (e) {
-    console.error(e)
+window.approveDep = function(id, status) {
+  const res = updateAdminDepositStatus(id, status)
+  if (res.success) {
+    showToast(res.message, 'success')
+    adminDepositsPanel()
+  } else {
+    showToast(res.message, 'error')
   }
-
-  showToast('Deposit approved and balance credited!', 'success')
-  adminDepositsPanel()
 }
 
+// 🎯 ALL MODES WIN/LOSS CONTROL (Wingo 30s, 60s, 180s, 300s + Aviator)
 function adminWinLossControl() {
   const state = getAdminState()
+
+  function getOptionsHtml(curVal) {
+    let opts = `
+      <option value="">Random (Normal Mode)</option>
+      <option value="GREEN" ${curVal === 'GREEN' ? 'selected' : ''}>Force GREEN Win</option>
+      <option value="RED" ${curVal === 'RED' ? 'selected' : ''}>Force RED Win</option>
+      <option value="VIOLET" ${curVal === 'VIOLET' ? 'selected' : ''}>Force VIOLET Win</option>
+      <option value="BIG" ${curVal === 'BIG' ? 'selected' : ''}>Force BIG Win</option>
+      <option value="SMALL" ${curVal === 'SMALL' ? 'selected' : ''}>Force SMALL Win</option>
+    `
+    for (let n = 0; n <= 9; n++) {
+      opts += `<option value="${n}" ${String(curVal) === String(n) ? 'selected' : ''}>Number ${n}</option>`
+    }
+    return opts
+  }
+
   document.querySelector('#adminContent').innerHTML = `
-    <h1>Game Win / Loss Control</h1>
-    <section class="normal-card" style="margin-bottom:20px;">
-      <h3>🎯 Wingo Mode-Wise Result Control</h3>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:13px; color:#38bdf8; font-weight:bold;">⏱️ Wingo 30 Sec Mode:</label>
-        <select id="ctrlWingo30" style="width:100%; padding:10px; margin-top:5px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155;">
-          <option value="">Random (Normal Mode)</option>
-          <option value="GREEN" ${state.modeForcedResults?.wingo30 === 'GREEN' ? 'selected' : ''}>Force GREEN Win</option>
-          <option value="RED" ${state.modeForcedResults?.wingo30 === 'RED' ? 'selected' : ''}>Force RED Win</option>
-          <option value="VIOLET" ${state.modeForcedResults?.wingo30 === 'VIOLET' ? 'selected' : ''}>Force VIOLET Win</option>
-          <option value="BIG" ${state.modeForcedResults?.wingo30 === 'BIG' ? 'selected' : ''}>Force BIG Win</option>
-          <option value="SMALL" ${state.modeForcedResults?.wingo30 === 'SMALL' ? 'selected' : ''}>Force SMALL Win</option>
-          ${[0,1,2,3,4,5,6,7,8,9].map(n => `<option value="${n}" ${String(state.modeForcedResults?.wingo30) === String(n) ? 'selected' : ''}>Number ${n}</option>`).join('')}
-        </select>
-      </div>
-      <button id="saveAllModesBtn" class="main-btn" style="background:#22c55e;">Save Wingo Controls</button>
+    <h1>All Games Win / Loss Control</h1>
+    
+    <section class="normal-card" style="margin-bottom:15px;">
+      <h3>🎯 Wingo 30 Sec Control</h3>
+      <select id="ctrlWingo30" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155;">
+        ${getOptionsHtml(state.modeForcedResults?.wingo30)}
+      </select>
     </section>
+
+    <section class="normal-card" style="margin-bottom:15px;">
+      <h3>🎯 Wingo 1 Min Control</h3>
+      <select id="ctrlWingo60" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155;">
+        ${getOptionsHtml(state.modeForcedResults?.wingo60)}
+      </select>
+    </section>
+
+    <section class="normal-card" style="margin-bottom:15px;">
+      <h3>🎯 Wingo 3 Min Control</h3>
+      <select id="ctrlWingo180" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155;">
+        ${getOptionsHtml(state.modeForcedResults?.wingo180)}
+      </select>
+    </section>
+
+    <section class="normal-card" style="margin-bottom:15px;">
+      <h3>🎯 Wingo 5 Min Control</h3>
+      <select id="ctrlWingo300" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155;">
+        ${getOptionsHtml(state.modeForcedResults?.wingo300)}
+      </select>
+    </section>
+
+    <section class="normal-card" style="margin-bottom:15px;">
+      <h3>✈️ Aviator Crash Multiplier Control</h3>
+      <input id="ctrlAviator" type="number" step="0.1" placeholder="Force Crash At (e.g. 1.2, 5.0) Leave empty for Random" value="${state.modeForcedResults?.aviator || ''}" style="width:100%; padding:10px; border-radius:8px; background:#0f172a; color:#fff; border:1px solid #334155;">
+    </section>
+
+    <button id="saveAllModesBtn" class="main-btn" style="background:#22c55e; padding:14px; font-size:15px;">Save All Controls</button>
   `
 
   document.querySelector('#saveAllModesBtn').onclick = () => {
     const v30 = document.querySelector('#ctrlWingo30').value
+    const v60 = document.querySelector('#ctrlWingo60').value
+    const v180 = document.querySelector('#ctrlWingo180').value
+    const v300 = document.querySelector('#ctrlWingo300').value
+    const av = document.querySelector('#ctrlAviator').value
+
     setModeForcedResult('wingo30', v30 === '' ? null : v30)
-    showToast('Wingo Control saved successfully!', 'success')
+    setModeForcedResult('wingo60', v60 === '' ? null : v60)
+    setModeForcedResult('wingo180', v180 === '' ? null : v180)
+    setModeForcedResult('wingo300', v300 === '' ? null : v300)
+    setAviatorCrashPoint(av === '' ? null : av)
+
+    showToast('All Game Controls Saved Successfully!', 'success')
   }
 }
 
