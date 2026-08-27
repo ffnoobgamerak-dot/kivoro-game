@@ -141,6 +141,7 @@ body {
   display: flex;
   gap: 6px;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
+  z-index: 1000;
 }
 
 .bottom-nav button {
@@ -192,6 +193,7 @@ body {
     padding: 8px 10px;
   }
 }
+
 /* ===== Big / Small Game Screen ===== */
 
 .game-title {
@@ -345,55 +347,8 @@ body {
     font-size: 23px;
   }
 }
+
 /* ===== WINGO HOME ===== */
-
-.app-shell {
-  width: min(100%, 900px);
-  margin: auto;
-  padding: 20px;
-}
-
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #111d2e;
-  padding: 18px 22px;
-  border-radius: 18px;
-}
-
-.brand {
-  font-size: 28px;
-  font-weight: 800;
-  color: white;
-}
-
-.subtext {
-  color: #8fa4bd;
-  margin-top: 4px;
-}
-
-.balance-card {
-  background: #192a40;
-  padding: 10px 18px;
-  border-radius: 12px;
-  color: white;
-}
-
-.balance-card span {
-  display: block;
-  font-size: 12px;
-  color: #9aabc0;
-}
-
-.hero {
-  margin-top: 25px;
-}
-
-.hero h1 {
-  font-size: 35px;
-  margin-bottom: 5px;
-}
 
 .mode-grid {
   display: grid;
@@ -408,17 +363,10 @@ body {
   padding: 18px 8px;
   border-radius: 18px;
   cursor: pointer;
-
-  background: linear-gradient(
-    145deg,
-    #16d795,
-    #08a96f
-  );
-
+  background: linear-gradient(145deg, #16d795, #08a96f);
   color: white;
   font-size: 15px;
   font-weight: 700;
-
   box-shadow: 0 10px 25px rgba(0,0,0,.25);
   transition: .2s;
 }
@@ -554,15 +502,6 @@ body {
   transform: scale(.96);
 }
 
-.history-row {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  background: #14243a;
-  margin-top: 7px;
-  padding: 12px;
-  border-radius: 10px;
-}
-
 @media(max-width:600px) {
   .mode-grid {
     grid-template-columns: repeat(2,1fr);
@@ -573,6 +512,7 @@ body {
     height: 50px;
   }
 }
+
 /* ===== AUTH / LOGIN / REGISTER ===== */
 
 .auth-wrap {
@@ -581,9 +521,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background:
-    radial-gradient(circle at top, rgba(20, 215, 149, 0.18), transparent 35%),
-    #07111f;
+  background: radial-gradient(circle at top, rgba(20, 215, 149, 0.18), transparent 35%), #07111f;
 }
 
 .auth-card {
@@ -622,11 +560,6 @@ body {
   border-color: #13cf8d;
 }
 
-.auth-card .play-btn {
-  width: 100%;
-  margin-top: 5px;
-}
-
 .auth-switch {
   margin-top: 20px;
   text-align: center;
@@ -641,6 +574,7 @@ body {
   cursor: pointer;
   margin-left: 5px;
 }
+
 .phone-box {
   display: flex;
   align-items: center;
@@ -703,31 +637,6 @@ body {
 
 .section-title {
   margin-top: 25px;
-}
-
-.game-grid {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  gap: 12px;
-}
-
-.game-card {
-  border: 0;
-  border-radius: 18px;
-  padding: 20px 10px;
-  background: linear-gradient(145deg,#16c989,#087f60);
-  color: white;
-}
-
-.game-card span {
-  display: block;
-  font-size: 28px;
-}
-
-.game-card strong,
-.game-card small {
-  display: block;
-  margin-top: 7px;
 }
 
 .more-games {
@@ -807,14 +716,6 @@ body {
   margin-top: 15px;
 }
 
-.choice {
-  border: 0;
-  padding: 15px;
-  border-radius: 14px;
-  color: white;
-  font-weight: 800;
-}
-
 .choice.green {
   background: #18ba7b;
 }
@@ -833,42 +734,6 @@ body {
 
 .choice.small {
   background: #3e78e6;
-}
-
-.choice.selected {
-  outline: 4px solid rgba(255,255,255,.4);
-}
-
-.number-grid {
-  display: grid;
-  grid-template-columns: repeat(5,1fr);
-  gap: 12px;
-  margin: 18px 0;
-}
-
-.number {
-  width: 58px;
-  height: 58px;
-  margin: auto;
-  border-radius: 50%;
-  background: white;
-  border: 4px solid #19b87b;
-  font-size: 21px;
-  font-weight: 900;
-}
-
-.number-0,
-.number-5 {
-  border-color: #9558d9;
-  color: #9558d9;
-}
-
-.number-2,
-.number-4,
-.number-6,
-.number-8 {
-  border-color: #e94b59;
-  color: #e94b59;
 }
 
 .size-buttons {
@@ -1105,7 +970,6 @@ body {
 }
 
 @media (max-width: 700px) {
-
   .game-grid {
     grid-template-columns: repeat(2,1fr);
   }

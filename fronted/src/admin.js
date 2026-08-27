@@ -10,13 +10,35 @@
 const ADMIN_PHONE = '9999999999';
 
 /* =========================
-   ADMIN AUTH
+   ADMIN AUTH & AUTO-INIT
 ========================= */
 
 export function isAdmin(user) {
   if (!user) return false;
   return user.phone === ADMIN_PHONE || user.role === 'ADMIN';
 }
+
+function ensureAdminExists() {
+  try {
+    const users = JSON.parse(localStorage.getItem('kivoro_users') || '[]');
+    const adminExists = users.some(u => u.phone === ADMIN_PHONE || u.role === 'ADMIN');
+    if (!adminExists) {
+      users.unshift({
+        id: 'ADMIN-001',
+        name: 'Super Admin',
+        phone: ADMIN_PHONE,
+        password: 'admin',
+        role: 'ADMIN',
+        balance: 999999,
+        referralCode: 'ADMINREF'
+      });
+      localStorage.setItem('kivoro_users', JSON.stringify(users));
+    }
+  } catch (e) {
+    console.error('Admin init error:', e);
+  }
+}
+ensureAdminExists();
 
 /* =========================
    ADMIN STATE
@@ -389,12 +411,20 @@ export function claimGiftCode(code, userId) {
     if (!gift || !gift.enabled) return { success: false, message: 'Invalid ya expired gift code hai' };
     if (gift.used >= gift.maxUses) return { success: false, message: 'Is gift code ki maximum use limit khatam ho chuki hai' };
 
-    const claimTrackingKey = `claimed_${userId}_${gift.code}`;
-    if (localStorage.getItem(claimTrackingKey)) {
+    let userClaims = [];
+    try {
+      userClaims = JSON.parse(localStorage.getItem('kivoro_claimed_' + userId) || '[]');
+    } catch {
+      userClaims = [];
+    }
+
+    if (userClaims.includes(trimmedCode)) {
       return { success: false, message: 'Aap yeh gift code pehle hi claim kar chuke hain' };
     }
 
-    localStorage.setItem(claimTrackingKey, 'true');
+    userClaims.push(trimmedCode);
+    localStorage.setItem('kivoro_claimed_' + userId, JSON.stringify(userClaims));
+
     gift.used += 1;
     saveAdminState(state);
 
